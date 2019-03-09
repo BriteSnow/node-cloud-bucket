@@ -1,0 +1,18 @@
+# This is a example of a file to run the cloud bucket unit testing. 
+# Rename it to `~test-buckets.yaml` (same folder), and complete with  your value below
+
+buckets:
+
+  testGcp: 
+    bucketName: _GOOGLE_BUCKET_NAME_
+    project_id: _GOOGLE_PROJECT_ID_NAME_
+    client_email: "_GOOGLE_SERVICE_ACCOUNT_EMAIL_"
+    private_key: |
+      -----BEGIN PRIVATE KEY-----
+      _GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_WITH_NEW_LINE_
+      -----END PRIVATE KEY-----
+
+  testAws: 
+    bucketName: _AWS_BUCKET_NAME_
+    access_key_id: "_AWS_ACCESS_KEY_ID_"
+    ascess_key_secret: "_AWS_ACCESS_KEY_SECRETE_"

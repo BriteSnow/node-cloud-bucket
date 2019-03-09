@@ -1,0 +1,37 @@
+{
+  "name": "cloud-bucket",
+  "version": "0.0.1",
+  "description": "Simple multi cloud API",
+  "author": "Jeremy Chone <jeremy.chone@gmail.com>",
+  "main": "dist/main.js",
+  "typings": "dist/types/main.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/BriteSnow/node-cloud-bucket.git"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^2.4.2",
+    "@types/micromatch": "^3.1.0",
+    "aws-sdk": "^2.414.0",
+    "fast-glob": "^2.2.6",
+    "fs-extra-plus": "^0.5.3",
+    "micromatch": "^3.1.10"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^3.12.0",
+    "@types/mocha": "^5.2.6",
+    "js-yaml": "^3.12.2",
+    "mocha": "^6.0.2",
+    "ts-node": "^8.0.2",
+    "typescript": "^3.3.3333"
+  },
+  "scripts": {
+    "test": "TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts",
+    "testd": "TS_NODE_FILES=true ./node_modules/.bin/mocha --inspect-brk ./test/*.spec.ts",
+    "prepare": "tsc"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/BriteSnow/node-cloud-bucket/issues"
+  }
+}
