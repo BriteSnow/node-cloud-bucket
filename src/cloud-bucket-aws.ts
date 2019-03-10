@@ -1,4 +1,4 @@
-import { Bucket, File, buildFullDestPath, extractPrefixAndGlob, downloadAll } from "./cloud-bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, extractPrefixAndGlob, commonBucketDownload, commonBucketCopy } from "./cloud-bucket-base";
 import { readFile, createWriteStream, mkdirp } from 'fs-extra-plus';
 import * as Path from 'path';
 import micromatch = require('micromatch');
@@ -25,23 +25,27 @@ export async function getAwsBucket(cfg: AwsBucketCfg) {
 
 
 
-class AwsBucket implements Bucket {
+class AwsBucket implements Bucket<AwsFile> {
 	private s3: S3;
 	private baseParams: { Bucket: string };
+
 	get type(): string {
-		return 'gs'
+		return 's3'
 	}
 	get name(): string {
 		return this.baseParams.Bucket;
 	}
 
+	getPath(obj: AwsFile) {
+		return obj.Key!; // TODO: need to investigate when Key is empty in S3. 
+	}
 
 	constructor(s3: S3, bucketName: string) {
 		this.s3 = s3;
 		this.baseParams = { Bucket: bucketName };
 	}
 
-	async getFile(path: string): Promise<File | null> {
+	async getFile(path: string): Promise<BucketFile | null> {
 		throw new Error('Not implemented yet');
 	}
 
@@ -49,51 +53,38 @@ class AwsBucket implements Bucket {
 	 * 
 	 * @param path prefix path or glob (the string before the first '*' will be used as prefix)
 	 */
-	async list(prefixOrGlob?: string): Promise<File[]> {
+	async list(prefixOrGlob?: string): Promise<BucketFile[]> {
 		const awsFiles = await this.listAwsFiles(prefixOrGlob);
 
 		return awsFiles.map(gf => this.toFile(gf));
 	}
 
-	async copy(pathOrGlob: string, destDir: string | File): Promise<void> {
-		const files = await this.listAwsFiles(pathOrGlob);
-
-		// get the dest bucket
-		// FIXME: need to validate the File is GcpBucket
-		const destBucket = ((typeof destDir === 'string') ? this : destDir.bucket) as AwsBucket;
-		const destPathDir = (typeof destDir === 'string') ? destDir : destDir.path;
-
-		// check if destPathDir is a dir (must end with `/`)
-		if (!destPathDir.endsWith('/')) {
-			throw new Error(`FATAL - CS ERROR - destDir must end with '/', but was '${destPathDir}')`)
-		}
-
-		for (let af of files) {
-			const sourcePath = af.Key!;
-			const basename = Path.basename(sourcePath);
-			const destPath = destPathDir + basename;
-			process.stdout.write(`Copying ${this.name}:${sourcePath} to ${destBucket.name}:${destPath}`);
-			try {
-				const params = {
-					CopySource: `${this.name}/${sourcePath}`,
-					Bucket: destBucket.name,
-					Key: destPath
-				}
-				await this.s3.copyObject(params).promise();
-				process.stdout.write(` - DONE\n`);
-			} catch (ex) {
-				process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
-				throw ex;
-			}
-		}
-	}
-
-	async download(pathOrGlob: string, localDir: string): Promise<File[]> {
+	async copy(pathOrGlob: string, destDir: string | BucketFile): Promise<void> {
 		const awsFiles = await this.listAwsFiles(pathOrGlob);
 
-		const files = await downloadAll(this, awsFiles, pathOrGlob, localDir,
-			(object: AWS.S3.Object) => { return object.Key! }
-			, async (object: AWS.S3.Object, remotePath, localPath) => {
+		const files = await commonBucketCopy(this, awsFiles, pathOrGlob, destDir,
+			async (awsFile: AWS.S3.Object, dest: BucketFile) => {
+				const destAwsBucket = (dest.bucket instanceof AwsBucket) ? dest.bucket as AwsBucket : null;
+				if (!destAwsBucket) {
+					throw new Error(`destBucket type ${dest.bucket.type} does not match source bucket type ${this.type}. For now, cross bucket type copy not supported.`)
+				}
+				const sourcePath = awsFile.Key!;
+				const params = {
+					CopySource: `${this.name}/${sourcePath}`,
+					Bucket: destAwsBucket.name,
+					Key: dest.path
+				}
+				await this.s3.copyObject(params).promise();
+			}
+		);
+	}
+
+	async download(pathOrGlob: string, localDir: string): Promise<BucketFile[]> {
+		const awsFiles = await this.listAwsFiles(pathOrGlob);
+
+		const files = await commonBucketDownload(this, awsFiles, pathOrGlob, localDir,
+			async (object: AwsFile, localPath) => {
+				const remotePath = object.Key!;
 				const params = { ...this.baseParams, ...{ Key: remotePath } };
 				const remoteReadStream = this.s3.getObject(params).createReadStream();
 				const localWriteStream = createWriteStream(localPath);
@@ -114,7 +105,7 @@ class AwsBucket implements Bucket {
 		return files;
 	}
 
-	async upload(localPath: string, destPath: string): Promise<File> {
+	async upload(localPath: string, destPath: string): Promise<BucketFile> {
 
 		const fullDestPath = buildFullDestPath(localPath, destPath);
 
@@ -130,7 +121,6 @@ class AwsBucket implements Bucket {
 			process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
 			throw ex;
 		}
-
 
 	}
 
@@ -183,7 +173,7 @@ class AwsBucket implements Bucket {
 
 	}
 
-	private toFile(this: AwsBucket, awsFile: AwsFile): File {
+	private toFile(this: AwsBucket, awsFile: AwsFile): BucketFile {
 		if (!awsFile) {
 			throw new Error(`No awsFile`);
 		}

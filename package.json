@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "description": "Simple multi cloud API",
   "author": "Jeremy Chone <jeremy.chone@gmail.com>",
-  "main": "dist/main.js",
-  "typings": "dist/types/main.d.ts",
+  "main": "dist/index.js",
+  "typings": "dist/types/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git://github.com/BriteSnow/node-cloud-bucket.git"

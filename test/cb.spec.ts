@@ -1,7 +1,7 @@
 import { rejects, strictEqual, AssertionError } from 'assert';
 import { mkdirp, readFile, saferRemove, glob } from 'fs-extra-plus';
 import { basename } from 'path';
-import { getBucket } from '../src/cloud-bucket';
+import { getBucket } from '../src/index';
 import { loadYaml } from './test-utils';
 
 
@@ -106,9 +106,13 @@ async function testDownloadGlob(rawCfg: any) {
 	await bucket.upload(localTestFile, remoteFile04);
 
 	// download with glob
-	await bucket.download('test-dir/**/*-03.txt', testTmpDir);
+	let bfiles = await bucket.download('test-dir/**/*-03.txt', testTmpDir);
+	strictEqual(bfiles.length, 2);
+	strictEqual(bfiles[0].path, 'test-dir/sub-dir/test-file-sub-03.txt')
+	strictEqual(bfiles[0].local, './test-data/~tmp/sub-dir/test-file-sub-03.txt')
+
 	let localFiles = await glob(testTmpDir + '**/*.*');
-	strictEqual(2, localFiles.length);
+	strictEqual(localFiles.length, 2);
 
 	// download from folder
 	await cleanTmpDir();

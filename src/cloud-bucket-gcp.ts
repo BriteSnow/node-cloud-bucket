@@ -1,4 +1,4 @@
-import { Bucket, File, buildFullDestPath, extractPrefixAndGlob, downloadAll } from "./cloud-bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, extractPrefixAndGlob, commonBucketDownload, commonBucketCopy } from "./cloud-bucket-base";
 import { Storage as GoogleStorage, Bucket as GoogleBucket, File as GoogleFile } from '@google-cloud/storage';
 import * as Path from 'path';
 import micromatch = require('micromatch');
@@ -24,8 +24,8 @@ export interface GcpBucketCfg {
 	private_key: string;
 }
 
-class GcpBucket implements Bucket {
-	googleBucket: GoogleBucket;
+class GcpBucket implements Bucket<GoogleFile> {
+	readonly googleBucket: GoogleBucket;
 
 	get type(): string {
 		return 'gs'
@@ -39,7 +39,11 @@ class GcpBucket implements Bucket {
 		this.googleBucket = googleBucket;
 	}
 
-	async getFile(path: string): Promise<File | null> {
+	getPath(obj: GoogleFile) {
+		return obj.name;
+	}
+
+	async getFile(path: string): Promise<BucketFile | null> {
 		const googleFile = this.googleBucket.file(path);
 		const f = (await googleFile.get())[0];
 		return this.toFile(f);
@@ -49,54 +53,40 @@ class GcpBucket implements Bucket {
 	 * 
 	 * @param path prefix path or glob (the string before the first '*' will be used as prefix)
 	 */
-	async list(prefixOrGlob?: string): Promise<File[]> {
+	async list(prefixOrGlob?: string): Promise<BucketFile[]> {
 		const googleFiles = await this.listGoogleFiles(prefixOrGlob);
 
 		return googleFiles.map(gf => this.toFile(gf));
 	}
 
-	async copy(pathOrGlob: string, destDir: string | File): Promise<void> {
-		const files = await this.listGoogleFiles(pathOrGlob);
+	async copy(pathOrGlob: string, destDir: string | BucketFile): Promise<void> {
+		const gfiles = await this.listGoogleFiles(pathOrGlob);
 
-		// get the dest bucket
-		// FIXME: need to validate the File is GcpBucket
-		const destBucket = ((typeof destDir === 'string') ? this : destDir.bucket) as GcpBucket;
-		const destPathDir = (typeof destDir === 'string') ? destDir : destDir.path;
-
-		// check if destPathDir is a dir (must end with `/`)
-		if (!destPathDir.endsWith('/')) {
-			throw new Error(`FATAL - CS ERROR - destDir must end with '/', but was '${destPathDir}')`)
-		}
-
-
-		for (let gf of files) {
-			const basename = Path.basename(gf.name);
-			const destPath = destPathDir + basename;
-			const destFile = this.googleBucket.file(destPath);
-			process.stdout.write(`Copying ${this.googleBucket.name}:${gf.name} to ${destBucket.googleBucket.name}:${destPath}`);
-			try {
-				await gf.copy(destFile);
-				process.stdout.write(` - DONE\n`);
-			} catch (ex) {
-				process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
-				throw ex;
+		const files = await commonBucketCopy(this, gfiles, pathOrGlob, destDir,
+			async (googleFile: GoogleFile, dest: BucketFile) => {
+				const destGcpBucket = (dest.bucket instanceof GcpBucket) ? dest.bucket as GcpBucket : null;
+				if (!destGcpBucket) {
+					throw new Error(`destBucket type ${dest.bucket.type} does not match source bucket type ${this.type}. For now, cross bucket type copy not supported.`)
+				}
+				const destFile = destGcpBucket.googleBucket.file(dest.path);
+				await googleFile.copy(destFile);
 			}
-		}
+		);
+
 	}
 
-	async download(pathOrGlob: string, localDir: string): Promise<File[]> {
+	async download(pathOrGlob: string, localDir: string): Promise<BucketFile[]> {
 		const googleFiles = await this.listGoogleFiles(pathOrGlob);
 
-		const files = await downloadAll(this, googleFiles, pathOrGlob, localDir,
-			(object: GoogleFile) => { return object.name },
-			async (gf: GoogleFile, remotePath, localPath) => {
+		const files = await commonBucketDownload(this, googleFiles, pathOrGlob, localDir,
+			async (gf: GoogleFile, localPath) => {
 				await gf.download({ destination: localPath });
 			});
 
 		return files;
 	}
 
-	async upload(localPath: string, destPath: string): Promise<File> {
+	async upload(localPath: string, destPath: string): Promise<BucketFile> {
 		const googleBucket = this.googleBucket;
 
 		const fullDestPath = buildFullDestPath(localPath, destPath);
@@ -142,7 +132,7 @@ class GcpBucket implements Bucket {
 
 
 	//#region    ---------- Private ---------- 
-	toFile(this: GcpBucket, googleFile: GoogleFile): File {
+	toFile(this: GcpBucket, googleFile: GoogleFile): BucketFile {
 		if (!googleFile) {
 			throw new Error(`No googleFile`);
 		}

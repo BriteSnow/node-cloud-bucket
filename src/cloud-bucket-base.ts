@@ -1,29 +1,31 @@
 import * as Path from 'path';
 import { mkdirp } from 'fs-extra-plus';
 
-export interface File {
+export interface BucketFile {
 	bucket: Bucket;
 	path: string;
-	size: number;
+	size?: number;
 	local?: string; // optional local file path
 }
 
 
 
-
-export interface Bucket {
+// Note: right now use generic default with F (file) any
+export interface Bucket<F = any> {
 	type: string;
 	name: string;
 
-	getFile(path: String): Promise<File | null>;
+	getPath(obj: F): string;
 
-	list(prefixOrGlob?: String): Promise<File[]>;
+	getFile(path: String): Promise<BucketFile | null>;
 
-	copy(path: string, to: string | File): Promise<void>;
+	list(prefixOrGlob?: String): Promise<BucketFile[]>;
 
-	download(prefixOrGlob: string, localDir: string): Promise<File[]>
+	copy(path: string, to: string | BucketFile): Promise<void>;
 
-	upload(localPath: string, path: string): Promise<File>
+	download(prefixOrGlob: string, localDir: string): Promise<BucketFile[]>
+
+	upload(localPath: string, path: string): Promise<BucketFile>
 
 	delete(path: string): Promise<boolean>
 
@@ -99,29 +101,26 @@ export function extractPrefixAndGlob(prefixOrGlob?: string) {
 }
 
 
-type ItemDownloadFn<T> = (object: T, remotePath: string, localPath: string) => Promise<void>;
-type GetRemotePath<T> = (object: T) => string;
+type ItemDownloadFn<F> = (object: F, localPath: string) => Promise<void>;
 
-export async function downloadAll<T>(bucket: Bucket, cloudFiles: T[],
+export async function commonBucketDownload<F>(bucket: Bucket, cloudFiles: F[],
 	pathOrGlob: string, localDir: string,
-	getRemotePathFn: GetRemotePath<T>,
-	downloadr: ItemDownloadFn<T>): Promise<File[]> {
+	downloadr: ItemDownloadFn<F>): Promise<BucketFile[]> {
 
-	const files: File[] = [];
+	const files: BucketFile[] = [];
 	const { baseDir } = extractPrefixAndGlob(pathOrGlob);
 
 	for (let cf of cloudFiles) {
-		const remotePath = getRemotePathFn(cf);
+		const remotePath = bucket.getPath(cf);
 
-		const baseName = Path.basename(remotePath);
-		const filePath = (baseDir) ? Path.relative(baseDir, remotePath) : baseName;
-		const localPath = `${localDir}${filePath}`;
+		const localPath = getDestPath(baseDir, remotePath, localDir);
+
 		const localPathDir = Path.dirname(localPath);
 		await mkdirp(localPathDir);
-		process.stdout.write(`Downloading s3://${bucket.name}/${remotePath} to ${localPath}`);
+		process.stdout.write(`Downloading ${bucket.type}://${bucket.name}/${remotePath} to ${localPath}`);
 
 		try {
-			await downloadr(cf, remotePath, localPath);
+			await downloadr(cf, localPath);
 			process.stdout.write(` - DONE\n`);
 			const file = { bucket, path: remotePath, size: -1, local: localPath };
 			files.push(file);
@@ -133,8 +132,47 @@ export async function downloadAll<T>(bucket: Bucket, cloudFiles: T[],
 
 	return files;
 }
+
+type ItemCopyFn<F> = (Object: F, destDir: BucketFile) => Promise<void>;
+
+export async function commonBucketCopy<F>(bucket: Bucket, cloudFiles: F[], pathOrGlob: string, destDir: string | BucketFile,
+	copier: ItemCopyFn<F>) {
+	const destBucket = ((typeof destDir === 'string') ? bucket : destDir.bucket);
+	const destPathDir = (typeof destDir === 'string') ? destDir : destDir.path;
+
+	// check if destPathDir is a dir (must end with `/`)
+	if (!destPathDir.endsWith('/')) {
+		throw new Error(`FATAL - CS ERROR - destDir must end with '/', but was '${destPathDir}')`)
+	}
+
+	const { baseDir } = extractPrefixAndGlob(pathOrGlob);
+	const files: BucketFile[] = [];
+
+	for (let cf of cloudFiles) {
+		const remotePath = bucket.getPath(cf);
+		const destPath = getDestPath(baseDir, remotePath, destPathDir);
+
+		process.stdout.write(`Copying ${bucket.type}://${bucket.name}/${remotePath} to ${bucket.type}://${destBucket.name}/${destPath}`);
+
+		try {
+			await copier(cf, { bucket: destBucket, path: destPath });
+			process.stdout.write(` - DONE\n`);
+
+		} catch (ex) {
+			process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
+			throw ex;
+		}
+	}
+	return files;
+}
 //#endregion ---------- /Common Bucket Utils ---------- 
 
+function getDestPath(baseDir: string | undefined, remotePath: string, destPathDir: string) {
+	const baseName = Path.basename(remotePath);
+	const filePath = (baseDir) ? Path.relative(baseDir, remotePath) : baseName;
+	const destPath = `${destPathDir}${filePath}`;
+	return destPath;
+}
 
 
 ////// Thoughts

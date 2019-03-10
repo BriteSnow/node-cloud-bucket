@@ -3,11 +3,12 @@ Simple cross cloud (for now GCP and AWS) bucket API.
 **Current Features:**
 - Supports AWS, GCP. 
 - Promise/async/await based.
+- Glob support (processed on the nodejs side)
 - Typed (Typescript)
 - SIMPLE
 
 **Roadmap:**
-- Stream copy between cloud
+- Stream copy between bucket
 - Azure support
 - API Refresh
 
@@ -20,7 +21,7 @@ Simple cross cloud (for now GCP and AWS) bucket API.
 import {getBucket} from 'cloud-bucket';
 
 const bucketCfg = {
-  bucketName: _BUCKET_NAME_
+  bucketName: '_BUCKET_NAME_'
   access_key_id: "_AWS_ACCESS_KEY_ID_"
   access_key_secret: "_AWS_ACCESS_KEY/_SECRET_"
 };
@@ -79,7 +80,7 @@ const files = await bucket.download('in-this-folder/**/*.txt', './local-dir/');
 
 ```
 
-For Google Cloud Storage, just do: 
+For Google Cloud Storage, just use (the `getBucket` API will auto-detect the type of cloud from the config object): 
 
 ```ts
 const bucketCfg = {
