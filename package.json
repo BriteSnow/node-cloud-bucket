@@ -1,6 +1,6 @@
 {
   "name": "cloud-bucket",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Simple multi cloud API",
   "author": "Jeremy Chone <jeremy.chone@gmail.com>",
   "main": "dist/index.js",
