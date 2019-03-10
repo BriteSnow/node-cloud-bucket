@@ -1,4 +1,4 @@
-import { Bucket, BucketFile, buildFullDestPath, extractPrefixAndGlob, commonBucketDownload, commonBucketCopy } from "./cloud-bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketDownload, commonBucketCopy } from "./bucket-base";
 import { Storage as GoogleStorage, Bucket as GoogleBucket, File as GoogleFile } from '@google-cloud/storage';
 import * as Path from 'path';
 import micromatch = require('micromatch');
@@ -150,7 +150,7 @@ class GcpBucket implements Bucket<GoogleFile> {
 	 */
 	async listGoogleFiles(prefixOrGlob?: string): Promise<GoogleFile[]> {
 		// extract the eventual prefix and glob from param
-		const { prefix, glob } = extractPrefixAndGlob(prefixOrGlob);
+		const { prefix, glob } = parsePrefixOrGlob(prefixOrGlob);
 
 		// build the query options and perform the request
 		let getListOpts = (prefix) ? { prefix } : undefined;

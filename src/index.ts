@@ -1,6 +1,6 @@
-import { Bucket, BucketFile } from './cloud-bucket-base';
-import { GcpBucketCfg, getGcpBucket } from './cloud-bucket-gcp';
-import { getAwsBucket, AwsBucketCfg } from './cloud-bucket-aws';
+import { Bucket, BucketFile } from './bucket-base';
+import { GcpBucketCfg, getGcpBucket } from './bucket-gcp';
+import { getAwsBucket, AwsBucketCfg } from './bucket-aws';
 
 export { Bucket, BucketFile };
 

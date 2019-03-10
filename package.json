@@ -33,5 +33,9 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/BriteSnow/node-cloud-bucket/issues"
-  }
+  },
+  "files": [
+    "src/",
+    "dist/"
+  ]
 }

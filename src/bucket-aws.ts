@@ -1,4 +1,4 @@
-import { Bucket, BucketFile, buildFullDestPath, extractPrefixAndGlob, commonBucketDownload, commonBucketCopy } from "./cloud-bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketDownload, commonBucketCopy } from "./bucket-base";
 import { readFile, createWriteStream, mkdirp } from 'fs-extra-plus';
 import * as Path from 'path';
 import micromatch = require('micromatch');
@@ -149,7 +149,7 @@ class AwsBucket implements Bucket<AwsFile> {
 	 * List the googleFiles for this bucket;
 	 */
 	async listAwsFiles(prefixOrGlob?: string): Promise<AwsFile[]> {
-		const { prefix, glob } = extractPrefixAndGlob(prefixOrGlob);
+		const { prefix, glob } = parsePrefixOrGlob(prefixOrGlob);
 
 		// build the list params
 		let listParams: { Prefix?: string } | undefined = undefined;

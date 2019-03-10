@@ -15,8 +15,10 @@ export interface Bucket<F = any> {
 	type: string;
 	name: string;
 
+	/** Return the path of a cloud "file object" */
 	getPath(obj: F): string;
 
+	/** Get and return a BucketFile for a given path (will do a cloud bucket query) */
 	getFile(path: String): Promise<BucketFile | null>;
 
 	list(prefixOrGlob?: String): Promise<BucketFile[]>;
@@ -72,7 +74,7 @@ export function buildFullDestPath(localPath: string, destPath: string) {
  * 					- glob is prefixOrGlob value if it is a glob, otherwise undefined.
  * 					- baseDir is the eventual longest directory path without any glob char (ending with '/') 
  */
-export function extractPrefixAndGlob(prefixOrGlob?: string) {
+export function parsePrefixOrGlob(prefixOrGlob?: string) {
 	let glob: string | undefined;
 	let prefix: string | undefined;
 	let baseDir: string | undefined;
@@ -108,7 +110,7 @@ export async function commonBucketDownload<F>(bucket: Bucket, cloudFiles: F[],
 	downloadr: ItemDownloadFn<F>): Promise<BucketFile[]> {
 
 	const files: BucketFile[] = [];
-	const { baseDir } = extractPrefixAndGlob(pathOrGlob);
+	const { baseDir } = parsePrefixOrGlob(pathOrGlob);
 
 	for (let cf of cloudFiles) {
 		const remotePath = bucket.getPath(cf);
@@ -145,7 +147,7 @@ export async function commonBucketCopy<F>(bucket: Bucket, cloudFiles: F[], pathO
 		throw new Error(`FATAL - CS ERROR - destDir must end with '/', but was '${destPathDir}')`)
 	}
 
-	const { baseDir } = extractPrefixAndGlob(pathOrGlob);
+	const { baseDir } = parsePrefixOrGlob(pathOrGlob);
 	const files: BucketFile[] = [];
 
 	for (let cf of cloudFiles) {
@@ -175,7 +177,6 @@ function getDestPath(baseDir: string | undefined, remotePath: string, destPathDi
 }
 
 
-////// Thoughts
 
 /**
  * NOT IMPLEMENTED YET
