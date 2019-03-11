@@ -1,12 +1,16 @@
 import * as Path from 'path';
 import { mkdirp } from 'fs-extra-plus';
+import { Readable, Writable } from 'stream';
 
 export interface BucketFile {
 	bucket: Bucket;
 	path: string;
 	size?: number;
+	updated?: string;
+	contentType?: string;
 	local?: string; // optional local file path
 }
+
 
 
 
@@ -25,9 +29,22 @@ export interface Bucket<F = any> {
 
 	copy(path: string, to: string | BucketFile): Promise<void>;
 
-	download(prefixOrGlob: string, localDir: string): Promise<BucketFile[]>
+	/**
+	 * Download one or more remote bucket file to a local file or a folder structure.
+	 * @param prefixOrGlob 
+	 * @param localDir 
+	 *  If end with '/' then all files from the prefixOrGlob will be downloaded with their originial filename (and relative folder structure). 
+	 *  Otherwise, if full file name, then, make sure there is onyl one matching bucket source, and copy to this file destination (to rename on download)
+	 */
+	download(prefixOrGlob: string, localPath: string): Promise<BucketFile[]>
 
-	upload(localPath: string, path: string): Promise<BucketFile>
+	downloadAsText(path: string): Promise<string>
+
+	upload(localPath: string, path: string): Promise<BucketFile>;
+
+	createReadStream(path: string): Promise<Readable>;
+
+	createWriteStream(path: string): Promise<Writable>;
 
 	delete(path: string): Promise<boolean>
 
@@ -106,25 +123,32 @@ export function parsePrefixOrGlob(prefixOrGlob?: string) {
 type ItemDownloadFn<F> = (object: F, localPath: string) => Promise<void>;
 
 export async function commonBucketDownload<F>(bucket: Bucket, cloudFiles: F[],
-	pathOrGlob: string, localDir: string,
+	pathOrGlob: string, localPath: string,
 	downloadr: ItemDownloadFn<F>): Promise<BucketFile[]> {
 
+	const isLocalPathDir = localPath.endsWith('/');
+
+	// If not a local directory, make sure we have only one file.
+	// TODO: might check if the pathOrGlob is a glob as well to prevent it (in case there is only one match)
+	if (!isLocalPathDir && cloudFiles.length > 1) {
+		throw new Error(`Cannot copy multiple files ${pathOrGlob} to the same local file ${localPath}. Download to a directory (end with '/') to download multipel file.`);
+	}
 	const files: BucketFile[] = [];
 	const { baseDir } = parsePrefixOrGlob(pathOrGlob);
 
 	for (let cf of cloudFiles) {
 		const remotePath = bucket.getPath(cf);
 
-		const localPath = getDestPath(baseDir, remotePath, localDir);
+		const localFilePath = (isLocalPathDir) ? getDestPath(baseDir, remotePath, localPath) : localPath;
 
-		const localPathDir = Path.dirname(localPath);
+		const localPathDir = Path.dirname(localFilePath);
 		await mkdirp(localPathDir);
-		process.stdout.write(`Downloading ${bucket.type}://${bucket.name}/${remotePath} to ${localPath}`);
+		process.stdout.write(`Downloading ${bucket.type}://${bucket.name}/${remotePath} to ${localFilePath}`);
 
 		try {
-			await downloadr(cf, localPath);
+			await downloadr(cf, localFilePath);
 			process.stdout.write(` - DONE\n`);
-			const file = { bucket, path: remotePath, size: -1, local: localPath };
+			const file = { bucket, path: remotePath, size: -1, local: localFilePath };
 			files.push(file);
 		} catch (ex) {
 			process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);

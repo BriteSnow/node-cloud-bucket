@@ -1,8 +1,8 @@
 import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketDownload, commonBucketCopy } from "./bucket-base";
 import { readFile, createWriteStream, mkdirp } from 'fs-extra-plus';
-import * as Path from 'path';
 import micromatch = require('micromatch');
 import * as AWS from 'aws-sdk';
+import { Readable, Writable, PassThrough } from "stream";
 // import {Object as AwsFile} from 'aws-sdk';
 
 type S3 = AWS.S3;
@@ -46,7 +46,19 @@ class AwsBucket implements Bucket<AwsFile> {
 	}
 
 	async getFile(path: string): Promise<BucketFile | null> {
-		throw new Error('Not implemented yet');
+		const object = await this.s3.headObject({ ...this.baseParams, ...{ Key: path } }).promise();
+		if (object) {
+			const updated = (object.LastModified) ? object.LastModified.toISOString() : undefined;
+			return {
+				bucket: this,
+				path,
+				updated,
+				size: object.ContentLength,
+				contentType: object.ContentType
+			}
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -79,10 +91,10 @@ class AwsBucket implements Bucket<AwsFile> {
 		);
 	}
 
-	async download(pathOrGlob: string, localDir: string): Promise<BucketFile[]> {
+	async download(pathOrGlob: string, localPath: string): Promise<BucketFile[]> {
 		const awsFiles = await this.listAwsFiles(pathOrGlob);
 
-		const files = await commonBucketDownload(this, awsFiles, pathOrGlob, localDir,
+		const files = await commonBucketDownload(this, awsFiles, pathOrGlob, localPath,
 			async (object: AwsFile, localPath) => {
 				const remotePath = object.Key!;
 				const params = { ...this.baseParams, ...{ Key: remotePath } };
@@ -105,6 +117,14 @@ class AwsBucket implements Bucket<AwsFile> {
 		return files;
 	}
 
+	async downloadAsText(path: string): Promise<string> {
+		const params = { ...this.baseParams, ...{ Key: path } };
+		//const remoteReadStream = this.s3.getObject(params).createReadStream();
+		const obj = await this.s3.getObject(params).promise();
+		const content = obj.Body!.toString();
+		return content;
+	}
+
 	async upload(localPath: string, destPath: string): Promise<BucketFile> {
 
 		const fullDestPath = buildFullDestPath(localPath, destPath);
@@ -122,6 +142,25 @@ class AwsBucket implements Bucket<AwsFile> {
 			throw ex;
 		}
 
+	}
+
+	async createReadStream(path: string): Promise<Readable> {
+		const params = { ...this.baseParams, ...{ Key: path } };
+		const obj = this.s3.getObject(params);
+
+		if (!obj) {
+			throw new Error(`Object not found for ${path}`);
+		}
+		return obj.createReadStream();
+	}
+
+	async createWriteStream(path: string): Promise<Writable> {
+		var pass = new PassThrough();
+
+		const params = { ...this.baseParams, ...{ Key: path }, Body: pass };
+		this.s3.upload(params);
+
+		return pass;
 	}
 
 	async delete(path: string): Promise<boolean> {
@@ -173,20 +212,20 @@ class AwsBucket implements Bucket<AwsFile> {
 
 	}
 
-	private toFile(this: AwsBucket, awsFile: AwsFile): BucketFile {
+	private toFile(awsFile: AwsFile): BucketFile {
 		if (!awsFile) {
 			throw new Error(`No awsFile`);
 		}
-
+		const updated = (awsFile.LastModified) ? awsFile.LastModified.toString() : undefined;
 		// FIXME: Needs to handle when Key or Size is undefined.
-
 		return {
 			bucket: this,
 			path: awsFile.Key!,
-			size: awsFile.Size!
+			size: awsFile.Size!,
+			updated: updated
 		}
-
 	}
+
 	//#endregion ---------- /Private ---------- 
 }
 

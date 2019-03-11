@@ -2,6 +2,7 @@ import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketD
 import { Storage as GoogleStorage, Bucket as GoogleBucket, File as GoogleFile } from '@google-cloud/storage';
 import * as Path from 'path';
 import micromatch = require('micromatch');
+import { Readable, Writable } from "stream";
 
 export async function getGcpBucket(cfg: GcpBucketCfg) {
 	// TODO: valid cfg
@@ -75,15 +76,21 @@ class GcpBucket implements Bucket<GoogleFile> {
 
 	}
 
-	async download(pathOrGlob: string, localDir: string): Promise<BucketFile[]> {
+	async download(pathOrGlob: string, localPath: string): Promise<BucketFile[]> {
 		const googleFiles = await this.listGoogleFiles(pathOrGlob);
 
-		const files = await commonBucketDownload(this, googleFiles, pathOrGlob, localDir,
+		const files = await commonBucketDownload(this, googleFiles, pathOrGlob, localPath,
 			async (gf: GoogleFile, localPath) => {
 				await gf.download({ destination: localPath });
 			});
 
 		return files;
+	}
+
+	async downloadAsText(path: string): Promise<string> {
+		const googleFile = this.googleBucket.file(path);
+		const buffer = await googleFile.download();
+		return buffer.toString();
 	}
 
 	async upload(localPath: string, destPath: string): Promise<BucketFile> {
@@ -104,9 +111,20 @@ class GcpBucket implements Bucket<GoogleFile> {
 
 	}
 
+	async createReadStream(path: string): Promise<Readable> {
+		const googleFile = this.googleBucket.file(path);
+		return googleFile.createReadStream();
+	}
+
+	async createWriteStream(path: string): Promise<Writable> {
+		const googleFile = this.googleBucket.file(path);
+		return googleFile.createWriteStream();
+	}
+
+
 	async delete(path: string): Promise<boolean> {
 		const googleFile = this.googleBucket.file(path);
-		process.stdout.write(`Deleting gs://${this.googleBucket.name}/${path}`);
+		process.stdout.write(`Deleting gs://${this.name}/${path}`);
 
 		if (googleFile) {
 			try {
@@ -136,11 +154,13 @@ class GcpBucket implements Bucket<GoogleFile> {
 		if (!googleFile) {
 			throw new Error(`No googleFile`);
 		}
-
+		const size = (googleFile.metadata.size) ? Number(googleFile.metadata.size) : undefined;
 		return {
 			path: googleFile.name,
 			bucket: this,
-			size: googleFile.metadata.size
+			size,
+			updated: googleFile.metadata.updated,
+			contentType: googleFile.metadata.contentType
 		}
 
 	}

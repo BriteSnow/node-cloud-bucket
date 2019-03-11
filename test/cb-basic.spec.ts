@@ -1,8 +1,8 @@
-import { rejects, strictEqual, AssertionError } from 'assert';
-import { mkdirp, readFile, saferRemove, glob } from 'fs-extra-plus';
+import { rejects, strictEqual, fail, ok } from 'assert';
+import { glob, readFile } from 'fs-extra-plus';
 import { basename } from 'path';
 import { getBucket } from '../src/index';
-import { loadYaml } from './test-utils';
+import { cleanAll, cleanTmpDir, loadBucketCfg } from './test-utils';
 
 
 const testDir = './test-data/'
@@ -15,51 +15,63 @@ const remoteFile04 = 'test-dir/sub-dir/test-file-sub-03.txt';
 
 const testTmpDir = './test-data/~tmp/';
 
-describe('cb', function () {
+describe('cb-basic', function () {
 
-	it('cb-gcp-basic', async function () {
+	it('cb-basic-getFile-gcp', async function () {
+		this.timeout(5000);
+		const cfg = await loadBucketCfg('testGcp');
+		await testGetFile.call(this, cfg);
+	});
+
+	it('cb-basic-getFile-aws', async function () {
+		this.timeout(5000);
+		const cfg = await loadBucketCfg('testAws');
+		await testGetFile.call(this, cfg);
+	});
+
+	it('cb-basic-basic-gcp', async function () {
 		this.timeout(5000);
 		const cfg = await loadBucketCfg('testGcp');
 		await testBasic.call(this, cfg);
 	});
 
-	it('cb-aws-basic', async function () {
+	it('cb-basic-basic-aws', async function () {
 		this.timeout(5000);
 		const cfg = await loadBucketCfg('testAws');
 		await testBasic.call(this, cfg);
 	});
 
-	it('cb-gcp-download', async function () {
+	it('cb-basic-download-gcp', async function () {
 		this.timeout(5000);
 		const cfg = await loadBucketCfg('testGcp');
 		await testDownload.call(this, cfg);
 	});
 
-	it('cb-aws-download', async function () {
+	it('cb-basic-download-aws', async function () {
 		this.timeout(5000);
 		const cfg = await loadBucketCfg('testAws');
 		await testDownload.call(this, cfg);
 	});
 
-	it('cb-gcp-download-glob', async function () {
+	it('cb-basic-download-glob-gcp', async function () {
 		this.timeout(15000);
 		const cfg = await loadBucketCfg('testGcp');
 		await testDownloadGlob.call(this, cfg);
 	});
 
-	it('cb-aws-download-glob', async function () {
+	it('cb-basic-download-glob-aws', async function () {
 		this.timeout(15000);
 		const cfg = await loadBucketCfg('testAws');
 		await testDownloadGlob.call(this, cfg);
 	});
 
-	it('cb-gcp-copy', async function () {
+	it('cb-basic-copy-gcp', async function () {
 		this.timeout(5000);
 		const cfg = await loadBucketCfg('testGcp');
 		await testCopy.call(this, cfg);
 	});
 
-	it('cb-aws-copy', async function () {
+	it('cb-basic-copy-aws', async function () {
 		this.timeout(5000);
 		const cfg = await loadBucketCfg('testAws');
 		await testCopy.call(this, cfg);
@@ -67,6 +79,21 @@ describe('cb', function () {
 });
 
 //#region    ---------- Test Functions ---------- 
+async function testGetFile(rawCfg: any) {
+	const bucket = await cleanAll(rawCfg);
+	await bucket.upload(localTestFile, remoteFile01);
+
+	const file = await bucket.getFile(remoteFile01);
+	if (!file) {
+		fail(`No bucket file found for ${remoteFile01}`);
+		return;
+	}
+	strictEqual(file.path, remoteFile01)
+	strictEqual(file.size, 12);
+	ok(file.contentType, 'Has contentType');
+	ok(file.updated, 'Has updated');
+
+}
 
 async function testBasic(rawCfg: any) {
 	const bucket = await getBucket(rawCfg);
@@ -158,32 +185,5 @@ async function testCopy(rawCfg: any) {
 	const files = await bucket.list();
 	strictEqual(files.length, 2, 'One file uploaded, one file copied');
 }
-//#endregion ---------- /Test Functions ---------- 
+//#endregion ---------- /Test Functions ----------
 
-//#region    ---------- Utils ---------- 
-async function cleanTmpDir() {
-	//// clean local folder
-	await saferRemove(testTmpDir);
-	await mkdirp(testTmpDir);
-}
-async function cleanAll(rawCfg: any) {
-	console.log('---- cleanAll');
-	await cleanTmpDir();
-	//// clean remove bucket
-	const bucket = await getBucket(rawCfg);
-
-	const files = await bucket.list();
-
-	for (const f of files) {
-		await bucket.delete(f.path);
-	}
-	console.log('---- cleanAll --- DONE');
-
-	return bucket;
-}
-
-async function loadBucketCfg(name: string) {
-	let vdevBuckets: any = await loadYaml('./test-data/~test-buckets.yaml');
-	return vdevBuckets.buckets[name];
-}
-//#endregion ---------- /Utils ----------
