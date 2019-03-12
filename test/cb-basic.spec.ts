@@ -1,8 +1,6 @@
-import { rejects, strictEqual, fail, ok } from 'assert';
-import { glob, readFile } from 'fs-extra-plus';
-import { basename } from 'path';
+import { fail, ok, strictEqual } from 'assert';
 import { getBucket } from '../src/index';
-import { cleanAll, cleanTmpDir, loadBucketCfg, checkIsoDate, generateTests, testLocalFilePath } from './test-utils';
+import { checkIsoDate, cleanAll, generateTests, testLocalFilePath, testFileName } from './test-utils';
 
 
 const remoteFile01 = 'test-file-01.txt';
@@ -10,38 +8,30 @@ const remoteFile02 = 'test-dir/test-file-02.txt';
 const remoteFile03 = 'test-dir/test-file-03.txt';
 const remoteFile04 = 'test-dir/sub-dir/test-file-sub-03.txt';
 
-const testTmpDir = './test-data/~tmp/';
 
 
 describe('cb-basic', function () {
 
 	generateTests.call(this, {
-		'cb-basic-updated': testUpdated,
 		'cb-basic-getFile': testGetFile,
-		'cb-basic-basic': testBasic,
-		'cb-basic-download': testDownload,
-		'cb-basic-download-glob': testDownloadGlob
+		'cb-basic-getFile-null': testGetFileNull,
+		'cb-basic-exists': testExists,
+		'cb-basic-updated': testUpdated,
+		'cb-basic-list': testList
 	});
 
 });
 
 //#region    ---------- Test Functions ---------- 
-async function testUpdated(rawCfg: any) {
-	// clean and upload one test file
+async function testExists(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
-	await bucket.upload(testLocalFilePath, remoteFile01);
 
-	// check that the getFile return correct date format
-	const file = await bucket.getFile(remoteFile01);
-	ok(file, `bucket file for ${remoteFile01} not found`);
-	checkIsoDate(file!.updated);
+	let exists = await bucket.exists(testFileName);
+	strictEqual(exists, false, 'File should not exists');
 
-	// check that list return correct date format
-	const files = await bucket.list(remoteFile01);
-	ok(files.length === 1, `list(${remoteFile01}) return incorrect match ${files.length}`);
-	for (const file of files) {
-		checkIsoDate(file.updated);
-	}
+	await bucket.upload(testLocalFilePath, testFileName);
+	exists = await bucket.exists(testFileName);
+	strictEqual(exists, true, 'File should exists');
 }
 
 async function testGetFile(rawCfg: any) {
@@ -60,7 +50,38 @@ async function testGetFile(rawCfg: any) {
 
 }
 
-async function testBasic(rawCfg: any) {
+
+async function testGetFileNull(rawCfg: any) {
+	const bucket = await cleanAll(rawCfg);
+
+	// Should not throw an exception when not found, just return null
+	const file = await bucket.getFile(remoteFile01);
+	strictEqual(file, null, 'should be null');
+
+	// TODO: change rawCfg for to test that auth exception are propagated
+}
+
+async function testUpdated(rawCfg: any) {
+	// clean and upload one test file
+	const bucket = await cleanAll(rawCfg);
+	await bucket.upload(testLocalFilePath, remoteFile01);
+
+	// check that the getFile return correct date format
+	const file = await bucket.getFile(remoteFile01);
+	ok(file, `bucket file for ${remoteFile01} not found`);
+	checkIsoDate(file!.updated);
+
+	// check that list return correct date format
+	const files = await bucket.list(remoteFile01);
+	ok(files.length === 1, `list(${remoteFile01}) return incorrect match ${files.length}`);
+	for (const file of files) {
+		checkIsoDate(file.updated);
+	}
+}
+
+
+
+async function testList(rawCfg: any) {
 	const bucket = await getBucket(rawCfg);
 	// Clean test space
 	await cleanAll(rawCfg);
@@ -89,45 +110,6 @@ async function testBasic(rawCfg: any) {
 }
 
 
-async function testDownloadGlob(rawCfg: any) {
-	const bucket = await cleanAll(rawCfg);
-
-	await bucket.upload(testLocalFilePath, remoteFile01);
-	await bucket.upload(testLocalFilePath, remoteFile02);
-	await bucket.upload(testLocalFilePath, remoteFile03);
-	await bucket.upload(testLocalFilePath, remoteFile04);
-
-	// download with glob
-	let bfiles = await bucket.download('test-dir/**/*-03.txt', testTmpDir);
-	strictEqual(bfiles.length, 2);
-	strictEqual(bfiles[0].path, 'test-dir/sub-dir/test-file-sub-03.txt')
-	strictEqual(bfiles[0].local, './test-data/~tmp/sub-dir/test-file-sub-03.txt')
-
-	let localFiles = await glob(testTmpDir + '**/*.*');
-	strictEqual(localFiles.length, 2);
-
-	// download from folder
-	await cleanTmpDir();
-	await bucket.download('test-dir/', testTmpDir);
-	localFiles = await glob(testTmpDir + '**/*.*');
-	strictEqual(3, localFiles.length); // 3 because remoteFile01 is not under 'test-dir/'
-}
-
-async function testDownload(rawCfg: any) {
-	const bucket = await getBucket(rawCfg);
-
-	// Clean test space
-	await cleanAll(rawCfg);
-
-	// upload file
-	await bucket.upload(testLocalFilePath, remoteFile01);
-
-	// download file
-	const [remoteFile] = await bucket.download(remoteFile01, testTmpDir);
-
-	const str = await readFile(testTmpDir + basename(remoteFile.path), 'UTF8');
-	strictEqual(str, 'test file 01');
-}
 
 
 //#endregion ---------- /Test Functions ----------

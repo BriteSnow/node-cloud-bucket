@@ -1,15 +1,13 @@
-import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketDownload, commonBucketCopy, getContentType } from "./bucket-base";
-import { readFile, createWriteStream, mkdirp } from 'fs-extra-plus';
-import micromatch = require('micromatch');
 import * as AWS from 'aws-sdk';
+import { createWriteStream, readFile } from 'fs-extra-plus';
+import { PassThrough, Readable, Writable } from "stream";
+import { Bucket, BucketFile, buildFullDestPath, commonBucketDownload, getContentType, parsePrefixOrGlob, commonBucketCopy, commonDeleteAll, BucketFileDeleted } from "./bucket-base";
+import micromatch = require('micromatch');
 
-import { Readable, Writable, PassThrough } from "stream";
 // import {Object as AwsFile} from 'aws-sdk';
 
 type S3 = AWS.S3;
 type AwsFile = AWS.S3.Object;
-
-
 
 export interface AwsBucketCfg {
 	bucketName: string;
@@ -24,8 +22,6 @@ export async function getAwsBucket(cfg: AwsBucketCfg) {
 	return new AwsBucket(s3, cfg.bucketName);
 }
 
-
-
 class AwsBucket implements Bucket<AwsFile> {
 	private s3: S3;
 	private baseParams: { Bucket: string };
@@ -33,12 +29,9 @@ class AwsBucket implements Bucket<AwsFile> {
 	get type(): string {
 		return 's3'
 	}
+
 	get name(): string {
 		return this.baseParams.Bucket;
-	}
-
-	getPath(obj: AwsFile) {
-		return obj.Key!; // TODO: need to investigate when Key is empty in S3. 
 	}
 
 	constructor(s3: S3, bucketName: string) {
@@ -46,9 +39,18 @@ class AwsBucket implements Bucket<AwsFile> {
 		this.baseParams = { Bucket: bucketName };
 	}
 
+	getPath(obj: AwsFile) {
+		return obj.Key!; // TODO: need to investigate when Key is empty in S3. 
+	}
+
+	async exists(path: string): Promise<boolean> {
+		const file = await this.getFile(path);
+		return (file) ? true : false;
+	}
+
 	async getFile(path: string): Promise<BucketFile | null> {
-		const object = await this.s3.headObject({ ...this.baseParams, ...{ Key: path } }).promise();
-		if (object) {
+		try {
+			const object = await this.s3.headObject({ ...this.baseParams, ...{ Key: path } }).promise();
 			const updated = (object.LastModified) ? object.LastModified.toISOString() : undefined;
 			return {
 				bucket: this,
@@ -57,9 +59,17 @@ class AwsBucket implements Bucket<AwsFile> {
 				size: object.ContentLength,
 				contentType: object.ContentType
 			}
-		} else {
-			return null;
+		} catch (ex) {
+			//  if NotFound, return false
+			if (ex.code === 'NotFound') {
+				return null;
+			}
+			// otherwise, propagate the exception
+			else {
+				throw ex;
+			}
 		}
+
 	}
 
 	/**
@@ -177,17 +187,29 @@ class AwsBucket implements Bucket<AwsFile> {
 
 		try {
 			process.stdout.write(`Deleting s3://${this.baseParams.Bucket}/${path}`);
-			await this.s3.deleteObject({ ...this.baseParams, ...{ Key: path } }).promise();
-			process.stdout.write(` - DONE\n`);
-			return true;
+			// NOTE: For aws API, the s3.deleteObject seems to return exactly the same if the object existed or not. 
+			//       Therefore, we need to do an additional ping to know if the file exist  or not to return true/false
+			const exists = await this.exists(path);
+			if (exists) {
+				// NOTE: between the first test and this delete, the object might have been deleted, but since s3.deleteObjecct
+				//       does not seems to tell if the object exits or not, this is the best can do.
+				await this.s3.deleteObject({ ...this.baseParams, ...{ Key: path } }).promise();
+				process.stdout.write(` - DONE\n`);
+				return true;
+			} else {
+				process.stdout.write(` - Skipped (object not found)\n`);
+				return false;
+			}
 		} catch (ex) {
 			process.stdout.write(` - FAILED - ABORT - Cause ${ex}\n`);
 			throw ex;
 		}
-
 	}
 
 
+	async deleteAll(files: BucketFile[]): Promise<BucketFileDeleted[]> {
+		return await commonDeleteAll(this, files);
+	}
 	//#region    ---------- Private ---------- 
 
 

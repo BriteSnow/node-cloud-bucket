@@ -1,6 +1,5 @@
 import { strictEqual } from 'assert';
-import { readFile } from 'fs-extra-plus';
-import { cleanAll, loadBucketCfg, testTmpDir, generateTests } from './test-utils';
+import { cleanAll, generateTests } from './test-utils';
 
 
 describe('cb-upload', function () {
@@ -12,7 +11,6 @@ describe('cb-upload', function () {
 });
 
 //#region    ---------- Test Functions ---------- 
-
 
 async function testUploadContent(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);

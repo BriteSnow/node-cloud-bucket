@@ -1,8 +1,7 @@
-import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketDownload, commonBucketCopy, getContentType } from "./bucket-base";
-import { Storage as GoogleStorage, Bucket as GoogleBucket, File as GoogleFile } from '@google-cloud/storage';
-import * as Path from 'path';
-import micromatch = require('micromatch');
+import { Bucket as GoogleBucket, File as GoogleFile, Storage as GoogleStorage } from '@google-cloud/storage';
 import { Readable, Writable } from "stream";
+import { Bucket, BucketFile, buildFullDestPath, commonBucketCopy, commonBucketDownload, getContentType, parsePrefixOrGlob, commonDeleteAll, BucketFileDeleted } from "./bucket-base";
+import micromatch = require('micromatch');
 
 export async function getGcpBucket(cfg: GcpBucketCfg) {
 	// TODO: valid cfg
@@ -44,10 +43,28 @@ class GcpBucket implements Bucket<GoogleFile> {
 		return obj.name;
 	}
 
+	async exists(path: string): Promise<boolean> {
+		// Note: note gcp has specific file.exists method
+		const result = await this.googleBucket.file(path).exists();
+		return result[0];
+	}
+
 	async getFile(path: string): Promise<BucketFile | null> {
 		const googleFile = this.googleBucket.file(path);
-		const f = (await googleFile.get())[0];
-		return this.toFile(f);
+		try {
+			const f = (await googleFile.get())[0];
+			return this.toFile(f);
+		} catch (ex) {
+			// not found return null, as per getFile design.
+			if (ex.code === 404) {
+				return null;
+			}
+			// otherwise, propagate exception 
+			else {
+				throw ex;
+			}
+
+		}
 	}
 
 	/**
@@ -165,6 +182,9 @@ class GcpBucket implements Bucket<GoogleFile> {
 		}
 	}
 
+	async deleteAll(files: BucketFile[]): Promise<BucketFileDeleted[]> {
+		return await commonDeleteAll(this, files);
+	}
 
 	//#region    ---------- Private ---------- 
 	toFile(this: GcpBucket, googleFile: GoogleFile): BucketFile {
@@ -190,7 +210,8 @@ class GcpBucket implements Bucket<GoogleFile> {
 		const { prefix, glob } = parsePrefixOrGlob(prefixOrGlob);
 
 		// build the query options and perform the request
-		let getListOpts = (prefix) ? { prefix } : undefined;
+		let baseQuery = { autoPaginate: true };
+		let getListOpts = (prefix) ? { ...baseQuery, prefix } : baseQuery;
 		const result = await this.googleBucket.getFiles(getListOpts);
 		let gfList = result[0] || [];
 

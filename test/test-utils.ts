@@ -5,8 +5,8 @@ import { getBucket } from '../src';
 
 export const testDir = './test-data/';
 export const testTmpDir = './test-data/~tmp/';
-export const testLocalFileName = 'test-file.txt';
-export const testLocalFilePath = testDir + 'test-file.txt';
+export const testFileName = 'test-file.txt';
+export const testLocalFilePath = testDir + testFileName;
 
 //#region    ---------- Data Loaders ---------- 
 export async function yaml(content: string) {

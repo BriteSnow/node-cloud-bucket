@@ -13,7 +13,7 @@ export interface BucketFile {
 }
 
 
-
+export type BucketFileDeleted = BucketFile & { deleted: boolean };
 
 // Note: right now use generic default with F (file) any
 export interface Bucket<F = any> {
@@ -23,12 +23,23 @@ export interface Bucket<F = any> {
 	/** Return the path of a cloud "file object" */
 	getPath(obj: F): string;
 
-	/** Get and return a BucketFile for a given path (will do a cloud bucket query) */
+	exists(path: string): Promise<boolean>;
+
+	/** 
+	 * Get and return a BucketFile for a given path (will do a cloud bucket query).
+	 * Returns null if not found. Throw exception if any other exception than notfound.  
+	 */
 	getFile(path: String): Promise<BucketFile | null>;
 
 	list(prefixOrGlob?: String): Promise<BucketFile[]>;
 
-	copy(pathOrGlob: string, to: string | BucketFile): Promise<void>;
+	/**
+	 * Will copy one or more file to a destination file (then require single match, i.e. no glob), 
+	 * or to a destination folder.
+	 * @param prefixOrGlob full file name, or prefix or glob. If multiple match, to need dest must be a dir (end with '/')
+	 * @param dest can be dir path  (copying multiple file and preserving filename and relative dir structure), or full file name (require single match)
+	 */
+	copy(prefixOrGlob: string, dest: string | BucketFile): Promise<void>;
 
 	/**
 	 * Download one or more remote bucket file to a local file or a folder structure.
@@ -49,7 +60,13 @@ export interface Bucket<F = any> {
 
 	createWriteStream(path: string): Promise<Writable>;
 
+	/**
+	 * Delete a single file.
+	 * @param path 
+	 */
 	delete(path: string): Promise<boolean>
+
+	deleteAll(files: BucketFile[]): Promise<BucketFileDeleted[]>
 
 }
 
@@ -196,6 +213,25 @@ export async function commonBucketCopy<F>(bucket: Bucket, cloudFiles: F[], pathO
 		}
 	}
 	return files;
+}
+
+export async function commonDeleteAll(bucket: Bucket, files: BucketFile[]): Promise<BucketFileDeleted[]> {
+	const filesInfo: BucketFileDeleted[] = [];
+
+	// validate that all files are same bucket
+	for (const file of files) {
+		// check if same bucket
+		if (file.bucket !== bucket) {
+			throw new Error(`Cannot delete file from another bucket ${bucket.name} should match file bucket ${file.bucket.name}`);
+		}
+	}
+
+	for (const file of files) {
+		const deleted = await bucket.delete(file.path);
+		filesInfo.push({ ...file, deleted })
+	}
+
+	return filesInfo;
 }
 //#endregion ---------- /Common Bucket Utils ---------- 
 

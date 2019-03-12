@@ -1,6 +1,5 @@
-import { strictEqual, rejects, ok } from 'assert';
-import { readFile } from 'fs-extra-plus';
-import { cleanAll, loadBucketCfg, testTmpDir, generateTests, testLocalFilePath } from './test-utils';
+import { ok, rejects, strictEqual } from 'assert';
+import { cleanAll, generateTests, testLocalFilePath } from './test-utils';
 
 const remoteFile01 = 'test-file-01.txt';
 const remoteFile02 = 'test-file-02.txt';
