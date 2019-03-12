@@ -2,11 +2,8 @@ import { rejects, strictEqual, fail, ok } from 'assert';
 import { glob, readFile } from 'fs-extra-plus';
 import { basename } from 'path';
 import { getBucket } from '../src/index';
-import { cleanAll, cleanTmpDir, loadBucketCfg } from './test-utils';
+import { cleanAll, cleanTmpDir, loadBucketCfg, checkIsoDate, generateTests, testLocalFilePath } from './test-utils';
 
-
-const testDir = './test-data/'
-const localTestFile = testDir + 'test-file.txt';
 
 const remoteFile01 = 'test-file-01.txt';
 const remoteFile02 = 'test-dir/test-file-02.txt';
@@ -15,73 +12,42 @@ const remoteFile04 = 'test-dir/sub-dir/test-file-sub-03.txt';
 
 const testTmpDir = './test-data/~tmp/';
 
+
 describe('cb-basic', function () {
 
-	it('cb-basic-getFile-gcp', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testGcp');
-		await testGetFile.call(this, cfg);
+	generateTests.call(this, {
+		'cb-basic-updated': testUpdated,
+		'cb-basic-getFile': testGetFile,
+		'cb-basic-basic': testBasic,
+		'cb-basic-download': testDownload,
+		'cb-basic-download-glob': testDownloadGlob,
+		'cb-basic-copy': testCopy
 	});
 
-	it('cb-basic-getFile-aws', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testAws');
-		await testGetFile.call(this, cfg);
-	});
-
-	it('cb-basic-basic-gcp', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testGcp');
-		await testBasic.call(this, cfg);
-	});
-
-	it('cb-basic-basic-aws', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testAws');
-		await testBasic.call(this, cfg);
-	});
-
-	it('cb-basic-download-gcp', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testGcp');
-		await testDownload.call(this, cfg);
-	});
-
-	it('cb-basic-download-aws', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testAws');
-		await testDownload.call(this, cfg);
-	});
-
-	it('cb-basic-download-glob-gcp', async function () {
-		this.timeout(15000);
-		const cfg = await loadBucketCfg('testGcp');
-		await testDownloadGlob.call(this, cfg);
-	});
-
-	it('cb-basic-download-glob-aws', async function () {
-		this.timeout(15000);
-		const cfg = await loadBucketCfg('testAws');
-		await testDownloadGlob.call(this, cfg);
-	});
-
-	it('cb-basic-copy-gcp', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testGcp');
-		await testCopy.call(this, cfg);
-	});
-
-	it('cb-basic-copy-aws', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testAws');
-		await testCopy.call(this, cfg);
-	});
 });
 
 //#region    ---------- Test Functions ---------- 
+async function testUpdated(rawCfg: any) {
+	// clean and upload one test file
+	const bucket = await cleanAll(rawCfg);
+	await bucket.upload(testLocalFilePath, remoteFile01);
+
+	// check that the getFile return correct date format
+	const file = await bucket.getFile(remoteFile01);
+	ok(file, `bucket file for ${remoteFile01} not found`);
+	checkIsoDate(file!.updated);
+
+	// check that list return correct date format
+	const files = await bucket.list(remoteFile01);
+	ok(files.length === 1, `list(${remoteFile01}) return incorrect match ${files.length}`);
+	for (const file of files) {
+		checkIsoDate(file.updated);
+	}
+}
+
 async function testGetFile(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
-	await bucket.upload(localTestFile, remoteFile01);
+	await bucket.upload(testLocalFilePath, remoteFile01);
 
 	const file = await bucket.getFile(remoteFile01);
 	if (!file) {
@@ -105,10 +71,10 @@ async function testBasic(rawCfg: any) {
 	strictEqual(files.length, 0, 'Post cleanup (should be 0)');
 
 	// Test upload
-	await bucket.upload(localTestFile, remoteFile01);
-	await bucket.upload(localTestFile, remoteFile02);
-	await bucket.upload(localTestFile, remoteFile03);
-	await bucket.upload(localTestFile, remoteFile04);
+	await bucket.upload(testLocalFilePath, remoteFile01);
+	await bucket.upload(testLocalFilePath, remoteFile02);
+	await bucket.upload(testLocalFilePath, remoteFile03);
+	await bucket.upload(testLocalFilePath, remoteFile04);
 
 	// Test basic list
 	files = await bucket.list();
@@ -127,10 +93,10 @@ async function testBasic(rawCfg: any) {
 async function testDownloadGlob(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
 
-	await bucket.upload(localTestFile, remoteFile01);
-	await bucket.upload(localTestFile, remoteFile02);
-	await bucket.upload(localTestFile, remoteFile03);
-	await bucket.upload(localTestFile, remoteFile04);
+	await bucket.upload(testLocalFilePath, remoteFile01);
+	await bucket.upload(testLocalFilePath, remoteFile02);
+	await bucket.upload(testLocalFilePath, remoteFile03);
+	await bucket.upload(testLocalFilePath, remoteFile04);
 
 	// download with glob
 	let bfiles = await bucket.download('test-dir/**/*-03.txt', testTmpDir);
@@ -155,7 +121,7 @@ async function testDownload(rawCfg: any) {
 	await cleanAll(rawCfg);
 
 	// upload file
-	await bucket.upload(localTestFile, remoteFile01);
+	await bucket.upload(testLocalFilePath, remoteFile01);
 
 	// download file
 	const [remoteFile] = await bucket.download(remoteFile01, testTmpDir);
@@ -171,7 +137,7 @@ async function testCopy(rawCfg: any) {
 	await cleanAll(rawCfg);
 
 	// upload file
-	await bucket.upload(localTestFile, remoteFile01);
+	await bucket.upload(testLocalFilePath, remoteFile01);
 
 	// Test Exception: wrong arg, just end with / 
 	await rejects(async function () {

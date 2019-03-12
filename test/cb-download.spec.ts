@@ -1,6 +1,6 @@
 import { strictEqual } from 'assert';
 import { readFile } from 'fs-extra-plus';
-import { cleanAll, loadBucketCfg, testTmpDir } from './test-utils';
+import { cleanAll, loadBucketCfg, testTmpDir, generateTests } from './test-utils';
 
 
 const testFileName = 'test-file.txt';
@@ -9,28 +9,9 @@ const localTestFile = testDir + testFileName;
 
 describe('cb-download', function () {
 
-	it('cb-download-as-text-gcp', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testGcp');
-		await testDownloadAsText.call(this, cfg);
-	});
-
-	it('cb-download-as-text-aws', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testAws');
-		await testDownloadAsText.call(this, cfg);
-	});
-
-	it('cb-download-rename-aws', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testAws');
-		await testDownloadRename.call(this, cfg);
-	});
-
-	it('cb-download-rename-gcp', async function () {
-		this.timeout(5000);
-		const cfg = await loadBucketCfg('testGcp');
-		await testDownloadRename.call(this, cfg);
+	generateTests.call(this, {
+		'cb-download-as-text': testDownloadAsText,
+		'cb-download-rename': testDownloadRename
 	});
 });
 

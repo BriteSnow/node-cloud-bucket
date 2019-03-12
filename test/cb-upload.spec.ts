@@ -1,24 +1,12 @@
 import { strictEqual } from 'assert';
 import { readFile } from 'fs-extra-plus';
-import { cleanAll, loadBucketCfg, testTmpDir } from './test-utils';
+import { cleanAll, loadBucketCfg, testTmpDir, generateTests } from './test-utils';
 
 
-const testFileName = 'test-file.txt';
-const testDir = './test-data/'
-const localTestFile = testDir + testFileName;
+describe('cb-upload', function () {
 
-describe('cb-upload-content-gcp', function () {
-
-	it('cb-download-as-text-gcp', async function () {
-		this.timeout(15000);
-		const cfg = await loadBucketCfg('testGcp');
-		await testUploadContent.call(this, cfg);
-	});
-
-	it('cb-download-as-text-aws', async function () {
-		this.timeout(15000);
-		const cfg = await loadBucketCfg('testAws');
-		await testUploadContent.call(this, cfg);
+	generateTests.call(this, {
+		'cb-upload-content': testUploadContent
 	});
 
 });
