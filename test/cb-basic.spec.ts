@@ -20,8 +20,7 @@ describe('cb-basic', function () {
 		'cb-basic-getFile': testGetFile,
 		'cb-basic-basic': testBasic,
 		'cb-basic-download': testDownload,
-		'cb-basic-download-glob': testDownloadGlob,
-		'cb-basic-copy': testCopy
+		'cb-basic-download-glob': testDownloadGlob
 	});
 
 });
@@ -130,26 +129,6 @@ async function testDownload(rawCfg: any) {
 	strictEqual(str, 'test file 01');
 }
 
-async function testCopy(rawCfg: any) {
-	const bucket = await getBucket(rawCfg);
 
-	// Clean test space
-	await cleanAll(rawCfg);
-
-	// upload file
-	await bucket.upload(testLocalFilePath, remoteFile01);
-
-	// Test Exception: wrong arg, just end with / 
-	await rejects(async function () {
-		return bucket.copy(remoteFile01, 'test-copy');
-	}, /CS ERROR - destDir must end with '\/'/ig);
-
-	// Test Success: copy file
-	await bucket.copy(remoteFile01, 'test-copy/');
-
-	// Test basic list
-	const files = await bucket.list();
-	strictEqual(files.length, 2, 'One file uploaded, one file copied');
-}
 //#endregion ---------- /Test Functions ----------
 

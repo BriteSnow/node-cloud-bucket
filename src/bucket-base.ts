@@ -28,7 +28,7 @@ export interface Bucket<F = any> {
 
 	list(prefixOrGlob?: String): Promise<BucketFile[]>;
 
-	copy(path: string, to: string | BucketFile): Promise<void>;
+	copy(pathOrGlob: string, to: string | BucketFile): Promise<void>;
 
 	/**
 	 * Download one or more remote bucket file to a local file or a folder structure.
@@ -164,14 +164,17 @@ export async function commonBucketDownload<F>(bucket: Bucket, cloudFiles: F[],
 
 type ItemCopyFn<F> = (Object: F, destDir: BucketFile) => Promise<void>;
 
-export async function commonBucketCopy<F>(bucket: Bucket, cloudFiles: F[], pathOrGlob: string, destDir: string | BucketFile,
+export async function commonBucketCopy<F>(bucket: Bucket, cloudFiles: F[], pathOrGlob: string, dest: string | BucketFile,
 	copier: ItemCopyFn<F>) {
-	const destBucket = ((typeof destDir === 'string') ? bucket : destDir.bucket);
-	const destPathDir = (typeof destDir === 'string') ? destDir : destDir.path;
+	const destBucket = ((typeof dest === 'string') ? bucket : dest.bucket);
+	const destPath = (typeof dest === 'string') ? dest : dest.path;
 
-	// check if destPathDir is a dir (must end with `/`)
-	if (!destPathDir.endsWith('/')) {
-		throw new Error(`FATAL - CS ERROR - destDir must end with '/', but was '${destPathDir}')`)
+	const isDestPathDir = destPath.endsWith('/');
+
+	// If not a local directory, make sure we have only one file.
+	// TODO: might check if the pathOrGlob is a glob as well to prevent it (in case there is only one match)
+	if (!isDestPathDir && cloudFiles.length > 1) {
+		throw new Error(`Cannot copy multiple files ${pathOrGlob} to the same bucket file ${destPath}. Download to a directory (end with '/') to download multipel file.`);
 	}
 
 	const { baseDir } = parsePrefixOrGlob(pathOrGlob);
@@ -179,12 +182,12 @@ export async function commonBucketCopy<F>(bucket: Bucket, cloudFiles: F[], pathO
 
 	for (let cf of cloudFiles) {
 		const remotePath = bucket.getPath(cf);
-		const destPath = getDestPath(baseDir, remotePath, destPathDir);
+		const destFilePath = (isDestPathDir) ? getDestPath(baseDir, remotePath, destPath) : destPath;
 
-		process.stdout.write(`Copying ${bucket.type}://${bucket.name}/${remotePath} to ${bucket.type}://${destBucket.name}/${destPath}`);
+		process.stdout.write(`Copying ${bucket.type}://${bucket.name}/${remotePath} to ${bucket.type}://${destBucket.name}/${destFilePath}`);
 
 		try {
-			await copier(cf, { bucket: destBucket, path: destPath });
+			await copier(cf, { bucket: destBucket, path: destFilePath });
 			process.stdout.write(` - DONE\n`);
 
 		} catch (ex) {

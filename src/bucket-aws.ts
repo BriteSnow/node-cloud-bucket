@@ -223,7 +223,7 @@ class AwsBucket implements Bucket<AwsFile> {
 		if (!awsFile) {
 			throw new Error(`No awsFile`);
 		}
-		const updated = (awsFile.LastModified) ? awsFile.LastModified.toString() : undefined;
+		const updated = (awsFile.LastModified) ? awsFile.LastModified.toISOString() : undefined;
 		// FIXME: Needs to handle when Key or Size is undefined.
 		return {
 			bucket: this,
