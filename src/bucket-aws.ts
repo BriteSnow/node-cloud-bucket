@@ -1,7 +1,8 @@
-import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketDownload, commonBucketCopy } from "./bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketDownload, commonBucketCopy, getContentType } from "./bucket-base";
 import { readFile, createWriteStream, mkdirp } from 'fs-extra-plus';
 import micromatch = require('micromatch');
 import * as AWS from 'aws-sdk';
+
 import { Readable, Writable, PassThrough } from "stream";
 // import {Object as AwsFile} from 'aws-sdk';
 
@@ -133,7 +134,8 @@ class AwsBucket implements Bucket<AwsFile> {
 
 		try {
 			const localFileData = await readFile(localPath);
-			const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: fullDestPath, Body: localFileData } }).promise();
+			const ContentType = getContentType(destPath);
+			const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: fullDestPath, Body: localFileData, ContentType } }).promise();
 			process.stdout.write(` - DONE\n`);
 			// FIXME: Needs to make sure we cannot get the object from the putObject result, and that the size can be assumed to be localFileData.length
 			return { bucket: this, path: fullDestPath, size: localFileData.length };
@@ -142,6 +144,11 @@ class AwsBucket implements Bucket<AwsFile> {
 			throw ex;
 		}
 
+	}
+
+	async uploadContent(path: string, content: string): Promise<void> {
+		const ContentType = getContentType(path);
+		await this.s3.putObject({ ...this.baseParams, ...{ Key: path, Body: content, ContentType: ContentType } }).promise();
 	}
 
 	async createReadStream(path: string): Promise<Readable> {

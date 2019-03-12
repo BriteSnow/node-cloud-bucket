@@ -1,4 +1,4 @@
-import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketDownload, commonBucketCopy } from "./bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, parsePrefixOrGlob, commonBucketDownload, commonBucketCopy, getContentType } from "./bucket-base";
 import { Storage as GoogleStorage, Bucket as GoogleBucket, File as GoogleFile } from '@google-cloud/storage';
 import * as Path from 'path';
 import micromatch = require('micromatch');
@@ -97,11 +97,12 @@ class GcpBucket implements Bucket<GoogleFile> {
 		const googleBucket = this.googleBucket;
 
 		const fullDestPath = buildFullDestPath(localPath, destPath);
+		const contentType = getContentType(destPath);
 
 		// TODO: Needs to do 
 		process.stdout.write(`Uploading file ${localPath} to gs://${this.name}/${fullDestPath}`);
 		try {
-			const googleFile = (await googleBucket.upload(localPath, { destination: fullDestPath }))[0];
+			const googleFile = (await googleBucket.upload(localPath, { destination: fullDestPath, contentType }))[0];
 			process.stdout.write(' - DONE\n');
 			return this.toFile(googleFile);
 		} catch (ex) {
@@ -110,7 +111,23 @@ class GcpBucket implements Bucket<GoogleFile> {
 		}
 
 	}
-
+	async uploadContent(path: string, content: string): Promise<void> {
+		const googleFile = this.googleBucket.file(path);
+		const uploadReadable = new Readable();
+		const contentType = getContentType(path);
+		return new Promise(function (resolve, reject) {
+			uploadReadable
+				.pipe(googleFile.createWriteStream({ contentType }))
+				.on('error', function (err: any) {
+					reject(err);
+				})
+				.on('finish', function () {
+					resolve();
+				});
+			uploadReadable.push(content);
+			uploadReadable.push(null);
+		});
+	}
 	async createReadStream(path: string): Promise<Readable> {
 		const googleFile = this.googleBucket.file(path);
 		return googleFile.createReadStream();

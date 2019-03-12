@@ -1,6 +1,7 @@
 import * as Path from 'path';
 import { mkdirp } from 'fs-extra-plus';
 import { Readable, Writable } from 'stream';
+import * as mime from 'mime-types';
 
 export interface BucketFile {
 	bucket: Bucket;
@@ -41,6 +42,8 @@ export interface Bucket<F = any> {
 	downloadAsText(path: string): Promise<string>
 
 	upload(localPath: string, path: string): Promise<BucketFile>;
+
+	uploadContent(path: string, content: string): Promise<void>;
 
 	createReadStream(path: string): Promise<Readable>;
 
@@ -200,6 +203,12 @@ function getDestPath(baseDir: string | undefined, remotePath: string, destPathDi
 	return destPath;
 }
 
+export function getContentType(path: string) {
+	let ct = mime.contentType(path);
+	let contentType = (ct) ? ct : undefined;
+	return contentType;
+
+}
 
 
 /**
