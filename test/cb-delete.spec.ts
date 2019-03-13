@@ -1,6 +1,5 @@
-import { fail, ok, strictEqual } from 'assert';
-import { getBucket } from '../src/index';
-import { checkIsoDate, cleanAll, generateTests, testLocalFilePath, testFileName } from './test-utils';
+import { strictEqual } from 'assert';
+import { cleanAll, generateTests, testLocalFilePath } from './test-utils';
 
 
 const remoteFile01 = 'test-file-01.txt';

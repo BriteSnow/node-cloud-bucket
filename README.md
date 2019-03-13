@@ -29,6 +29,8 @@ const bucketCfg = {
 const bucket = await getBucket(bucketCfg);
 
 //// Uploads
+const file = await bucket.getFile('/some-file.txt');
+// Return BucketFile or null if not found, throws exception if other error.
 
 const file = await bucket.upload('./some-file.txt', 'in-this-folder/');
 // {Bucket:..., 
@@ -77,6 +79,9 @@ const files = await bucket.download('in-this-folder/**/*.txt', './local-dir/');
 //   local: `./local-dir/sub-dir/another-file.txt'
 // },
 //]
+
+const deleted = await bucket.delete('some-file.txt');
+// return true if deleted, false if not found, throws exception if other error.
 
 ```
 

@@ -12,7 +12,6 @@ export interface BucketFile {
 	local?: string; // optional local file path
 }
 
-
 export type BucketFileDeleted = BucketFile & { deleted: boolean };
 
 // Note: right now use generic default with F (file) any

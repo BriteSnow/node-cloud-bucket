@@ -1,4 +1,4 @@
-import * as AWS from 'aws-sdk';
+import { S3, Credentials } from 'aws-sdk';
 import { createWriteStream, readFile } from 'fs-extra-plus';
 import { PassThrough, Readable, Writable } from "stream";
 import { Bucket, BucketFile, buildFullDestPath, commonBucketDownload, getContentType, parsePrefixOrGlob, commonBucketCopy, commonDeleteAll, BucketFileDeleted } from "./bucket-base";
@@ -6,8 +6,8 @@ import micromatch = require('micromatch');
 
 // import {Object as AwsFile} from 'aws-sdk';
 
-type S3 = AWS.S3;
-type AwsFile = AWS.S3.Object;
+// type S3 = AWS.S3;
+type AwsFile = S3.Object;
 
 export interface AwsBucketCfg {
 	bucketName: string;
@@ -16,9 +16,9 @@ export interface AwsBucketCfg {
 }
 
 export async function getAwsBucket(cfg: AwsBucketCfg) {
-	const credentials = new AWS.Credentials(cfg.access_key_id, cfg.access_key_secret);
+	const credentials = new Credentials(cfg.access_key_id, cfg.access_key_secret);
 	// Create S3 service object
-	const s3 = new AWS.S3({ apiVersion: '2006-03-01', credentials });
+	const s3 = new S3({ apiVersion: '2006-03-01', credentials });
 	return new AwsBucket(s3, cfg.bucketName);
 }
 
