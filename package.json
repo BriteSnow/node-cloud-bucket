@@ -1,6 +1,6 @@
 {
   "name": "cloud-bucket",
-  "version": "0.2.2-SNAPSHOT",
+  "version": "0.2.3",
   "description": "Simple multi cloud API",
   "author": "Jeremy Chone <jeremy.chone@gmail.com>",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "@google-cloud/storage": "^2.4.2",
     "@types/micromatch": "^3.1.0",
     "@types/mime-types": "^2.1.0",
-    "aws-sdk": "^2.414.0",
+    "aws-sdk": "^2.420.0",
     "fs-extra-plus": "^0.5.3",
     "micromatch": "^3.1.10",
     "mime-types": "^2.1.22"
