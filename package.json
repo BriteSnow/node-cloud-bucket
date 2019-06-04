@@ -1,6 +1,6 @@
 {
   "name": "cloud-bucket",
-  "version": "0.2.3",
+  "version": "0.2.4-SNAPSHOT",
   "description": "Simple multi cloud API",
   "author": "Jeremy Chone <jeremy.chone@gmail.com>",
   "main": "dist/index.js",
@@ -10,21 +10,21 @@
     "url": "git://github.com/BriteSnow/node-cloud-bucket.git"
   },
   "dependencies": {
-    "@google-cloud/storage": "^2.4.2",
+    "@google-cloud/storage": "^2.5.0",
     "@types/micromatch": "^3.1.0",
     "@types/mime-types": "^2.1.0",
-    "aws-sdk": "^2.420.0",
-    "fs-extra-plus": "^0.5.3",
-    "micromatch": "^3.1.10",
-    "mime-types": "^2.1.22"
+    "aws-sdk": "^2.467.0",
+    "fs-extra-plus": "^0.5.6",
+    "micromatch": "^4.0.2",
+    "mime-types": "^2.1.24"
   },
   "devDependencies": {
-    "@types/js-yaml": "^3.12.0",
-    "@types/mocha": "^5.2.6",
-    "js-yaml": "^3.12.2",
-    "mocha": "^6.0.2",
-    "ts-node": "^8.0.2",
-    "typescript": "^3.3.3333"
+    "@types/js-yaml": "^3.12.1",
+    "@types/mocha": "^5.2.7",
+    "js-yaml": "^3.13.1",
+    "mocha": "^6.1.4",
+    "ts-node": "^8.2.0",
+    "typescript": "^3.5.1"
   },
   "scripts": {
     "test": "TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts",
