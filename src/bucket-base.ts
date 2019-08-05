@@ -1,5 +1,5 @@
 import * as Path from 'path';
-import { mkdirp } from 'fs-extra-plus';
+import { mkdirp, glob } from 'fs-extra-plus';
 import { Readable, Writable } from 'stream';
 import * as mime from 'mime-types';
 
@@ -51,7 +51,7 @@ export interface Bucket<F = any> {
 
 	downloadAsText(path: string): Promise<string>
 
-	upload(localPath: string, path: string): Promise<BucketFile>;
+	upload(localPath: string, path: string): Promise<BucketFile[]>;
 
 	uploadContent(path: string, content: string): Promise<void>;
 
@@ -74,13 +74,13 @@ export interface Bucket<F = any> {
 /**
  * Build the full destination path from the local path name and the destPath
  * - If `destPath` ends with `/`, then baseName of `localPath` is concatenated. 
- * - Otherwise, `destPath` is the fulLDestPath. 
+ * - Otherwise, `destPath` is the fullDestPath. 
  * 
  * @throws exception if destPath is not present. 
  */
 export function buildFullDestPath(localPath: string, destPath: string) {
 
-	// we we do not have a dest path, throw error
+	// we do not have a dest path, throw error
 	if (!destPath) {
 		throw new Error('No depthPath');
 	}
@@ -138,6 +138,7 @@ export function parsePrefixOrGlob(prefixOrGlob?: string) {
 	return { prefix, glob, baseDir };
 }
 
+//// Common DOWNLOAD
 
 type ItemDownloadFn<F> = (object: F, localPath: string) => Promise<void>;
 
@@ -177,6 +178,45 @@ export async function commonBucketDownload<F>(bucket: Bucket, cloudFiles: F[],
 
 	return files;
 }
+
+//// COMMON UPLOAD
+type ItemUploadFn = (localFilePath: string, remoteFilePath: string, contentType?: string) => Promise<BucketFile>;
+
+export async function commonBucketUpload<F>(bucket: Bucket, localFileOrDirOrGlob: string,
+	remotePath: string,
+	uploadr: ItemUploadFn): Promise<BucketFile[]> {
+
+	const bucketFiles: BucketFile[] = [];
+
+	if (localFileOrDirOrGlob.endsWith('/')) {
+		localFileOrDirOrGlob = localFileOrDirOrGlob + '**/*.*';
+	}
+	const isLocalGlob = localFileOrDirOrGlob.includes('*');
+
+	const { baseDir } = parsePrefixOrGlob(localFileOrDirOrGlob);
+
+	const localFiles = await glob(localFileOrDirOrGlob);
+
+	for (const localPath of localFiles) {
+		// if we have an localFileExpression (globs), then, we build the fullDestPath relative to the baseDir of the glob (last / before the first *)
+		const fullDestPath = (isLocalGlob) ? getDestPath(baseDir, localPath, remotePath) : buildFullDestPath(localPath, remotePath);
+		const contentType = getContentType(fullDestPath);
+		process.stdout.write(`Uploading file ${localPath} to ${bucket.type}://${bucket.name}/${fullDestPath}`);
+		try {
+			const bucketFile = await uploadr(localPath, fullDestPath, contentType);
+			bucketFiles.push(bucketFile);
+			process.stdout.write(` - DONE\n`);
+		} catch (ex) {
+			process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
+			throw ex;
+		}
+	}
+
+
+	return bucketFiles;
+}
+
+//// COMMON COPY
 
 type ItemCopyFn<F> = (Object: F, destDir: BucketFile) => Promise<void>;
 

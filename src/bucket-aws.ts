@@ -1,7 +1,7 @@
 import { S3, Credentials } from 'aws-sdk';
 import { createWriteStream, readFile } from 'fs-extra-plus';
 import { PassThrough, Readable, Writable } from "stream";
-import { Bucket, BucketFile, buildFullDestPath, commonBucketDownload, getContentType, parsePrefixOrGlob, commonBucketCopy, commonDeleteAll, BucketFileDeleted } from "./bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, commonBucketDownload, getContentType, parsePrefixOrGlob, commonBucketCopy, commonDeleteAll, BucketFileDeleted, commonBucketUpload } from "./bucket-base";
 import micromatch = require('micromatch');
 
 // import {Object as AwsFile} from 'aws-sdk';
@@ -136,7 +136,16 @@ class AwsBucket implements Bucket<AwsFile> {
 		return content;
 	}
 
-	async upload(localPath: string, destPath: string): Promise<BucketFile> {
+	async upload(localFileOrDirOrGlob: string, destPath: string): Promise<BucketFile[]> {
+		return commonBucketUpload(this, localFileOrDirOrGlob, destPath,
+			async (localPath, fullDestPath, contentType) => {
+				const localFileData = await readFile(localPath);
+				const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: fullDestPath, Body: localFileData, ContentType: contentType } }).promise();
+				return { bucket: this, path: fullDestPath, size: localFileData.length };
+			});
+	}
+
+	async uploadOld(localPath: string, destPath: string): Promise<BucketFile> {
 
 		const fullDestPath = buildFullDestPath(localPath, destPath);
 

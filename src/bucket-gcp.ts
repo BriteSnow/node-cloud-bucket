@@ -1,6 +1,6 @@
 import { Bucket as GoogleBucket, File as GoogleFile, Storage as GoogleStorage } from '@google-cloud/storage';
 import { Readable, Writable } from "stream";
-import { Bucket, BucketFile, buildFullDestPath, commonBucketCopy, commonBucketDownload, getContentType, parsePrefixOrGlob, commonDeleteAll, BucketFileDeleted } from "./bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, commonBucketCopy, commonBucketDownload, getContentType, parsePrefixOrGlob, commonDeleteAll, BucketFileDeleted, commonBucketUpload } from "./bucket-base";
 import micromatch = require('micromatch');
 
 export async function getGcpBucket(cfg: GcpBucketCfg) {
@@ -110,7 +110,16 @@ class GcpBucket implements Bucket<GoogleFile> {
 		return buffer.toString();
 	}
 
-	async upload(localPath: string, destPath: string): Promise<BucketFile> {
+	async upload(localFileOrDirOrGlob: string, destPath: string): Promise<BucketFile[]> {
+		return commonBucketUpload(this, localFileOrDirOrGlob, destPath,
+			async (localPath, remoteFilePath, contentType) => {
+				const googleBucket = this.googleBucket;
+				const googleFile = (await googleBucket.upload(localPath, { destination: remoteFilePath, contentType }))[0];
+				return this.toFile(googleFile);
+			});
+	}
+
+	async uploadOld(localPath: string, destPath: string): Promise<BucketFile> {
 		const googleBucket = this.googleBucket;
 
 		const fullDestPath = buildFullDestPath(localPath, destPath);
@@ -123,7 +132,7 @@ class GcpBucket implements Bucket<GoogleFile> {
 			process.stdout.write(' - DONE\n');
 			return this.toFile(googleFile);
 		} catch (ex) {
-			process.stdout.write(' - FAIL - ABORT - Cause: ${ex}');
+			process.stdout.write(` - FAIL - ABORT - Cause: ${ex}`);
 			throw ex;
 		}
 

@@ -1,11 +1,12 @@
 import { strictEqual } from 'assert';
-import { cleanAll, generateTests } from './test-utils';
+import { cleanAll, generateTests, testDir } from './test-utils';
 
 
 describe('cb-upload', function () {
 
 	generateTests.call(this, {
-		'cb-upload-content': testUploadContent
+		'cb-upload-content': testUploadContent,
+		'cb-upload-dir': testUploadDir
 	});
 
 });
@@ -30,6 +31,15 @@ async function testUploadContent(rawCfg: any) {
 	file = await bucket.getFile(txtPath);
 	strictEqual(file!.contentType, 'text/plain; charset=utf-8');
 	strictEqual(content, originalContent);
+}
+
+async function testUploadDir(rawCfg: any) {
+	const bucket = await cleanAll(rawCfg);
+
+	await bucket.upload(testDir, 'some-remote-base/');
+
+	const remoteFiles = await bucket.list();
+	strictEqual(remoteFiles.length, 3); // TODO: needs to check each file name at least
 }
 
 //#endregion ---------- /Test Functions ----------

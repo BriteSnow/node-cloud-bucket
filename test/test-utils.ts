@@ -3,9 +3,9 @@ import * as fs from 'fs-extra-plus';
 import { saferRemove, mkdirp } from 'fs-extra-plus';
 import { getBucket } from '../src';
 
-export const testDir = './test-data/';
+export const testDir = './test-data/dir/';
 export const testTmpDir = './test-data/~tmp/';
-export const testFileName = 'test-file.txt';
+export const testFileName = 'test-file-01.txt';
 export const testLocalFilePath = testDir + testFileName;
 
 //#region    ---------- Data Loaders ---------- 

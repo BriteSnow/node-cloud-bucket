@@ -32,15 +32,19 @@ const bucket = await getBucket(bucketCfg);
 const file = await bucket.getFile('/some-file.txt');
 // Return BucketFile or null if not found, throws exception if other error.
 
-const file = await bucket.upload('./some-file.txt', 'in-this-folder/');
-// {Bucket:..., 
+// upload to a folder
+const remoteFiles = await bucket.upload('./some-file.txt', 'in-this-folder/');
+// [{Bucket:..., 
 //  path: 'in-this-folder/some-file.txt', 
 //  size: 34, // size in bytes
 //  local: './some-file.txt' // only present for upload/download
-//  } 
+//  }]
 
-const file = await bucket.upload('./some-file.txt', 'in-this-folder/new-name.txt');
 // will upload to a specific name
+const remoteFiles = await bucket.upload('./some-file.txt', 'in-this-folder/new-name.txt');
+
+// upload a full folder remotely (recursive)
+const remoteFiles = await bucket.upload('./some-dir/', 'remote-base-dir/');
 
 
 //// List
@@ -54,6 +58,7 @@ const files = await bucket.list('in-this-folder/');
 const files = await bucket.list('in-this-folder/**/*.txt');
 // files: File[] (only file with the prefix 'in-this-folder/ and matching the glob);
 // Note: Glob processing happen on the nodejs side.
+
 
 //// Download
 
