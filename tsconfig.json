@@ -34,7 +34,7 @@
 
 	// We want more control about which code we will compile and exclude
 	"include": [
-		"./src/**/*.ts"
+		"./src/**/*.ts", "~notes/cloud-front-util.ts", "~notes/cloud-canned-policy.ts"
 	],
 
 	"exclude": [
