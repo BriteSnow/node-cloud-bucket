@@ -1,17 +1,17 @@
 import * as crypto from 'crypto';
 
-export interface CdnSignOptions {
+export interface SignUrlOptions {
 	type: 's3' | 'gs',
 	expires: number,
 	keyName: string,
 	key: string,
 }
 
-export function cdnSign(url: string, opts: CdnSignOptions) {
+export function signUrl(url: string, opts: SignUrlOptions) {
 	if (opts.type === 's3') {
-		return s3_sign(url, opts);
+		return s3_sign_url(url, opts);
 	} else if (opts.type === 'gs') {
-		return gs_sign(url, opts);
+		return gs_sign_url(url, opts);
 	} else {
 		throw new Error(`cdnSign does not support type ${opts.type} for now`);
 	}
@@ -19,7 +19,9 @@ export function cdnSign(url: string, opts: CdnSignOptions) {
 
 
 //#region    ---------- S3 Signer ---------- 
-function s3_sign(url: string, opts: CdnSignOptions) {
+let s3_signer: crypto.Signer | undefined;
+
+function s3_sign_url(url: string, opts: SignUrlOptions) {
 
 	//// build custom policy
 	const policyObject = {
@@ -37,8 +39,8 @@ function s3_sign(url: string, opts: CdnSignOptions) {
 
 	//// build signature
 	//const signature = s3_create_normalized_signature(policyObject, opts.key);
-	const sign = crypto.createSign('RSA-SHA1');
-	const signatureB64 = sign.update(policyString).sign(opts.key, 'base64');
+	let signer = crypto.createSign('RSA-SHA1');
+	const signatureB64 = signer.update(policyString).sign(opts.key, 'base64');
 	const signature = s3_normalize_b64(signatureB64);
 
 	//// key per id
@@ -59,7 +61,7 @@ function s3_normalize_b64(val: string) {
 
 const GCP_BASE64_REPLACE = { '+': '-', '/': '_', '=': '' };
 
-function gs_sign(url: string, opts: CdnSignOptions) {
+function gs_sign_url(url: string, opts: SignUrlOptions) {
 	// URL to sign
 	const urlToSign = `${url}?Expires=${opts.expires}&KeyName=${opts.keyName}`;
 

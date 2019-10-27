@@ -4,7 +4,7 @@ import { getAwsBucket, AwsBucketCfg } from './bucket-aws';
 
 export { Bucket, BucketFile };
 
-export { CdnSignOptions as SignOptions } from './cdn-signer';
+export { SignUrlOptions, signUrl } from './url-signer';
 
 
 export async function getBucket(rawCfg: any): Promise<Bucket> {
