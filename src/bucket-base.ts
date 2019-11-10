@@ -284,7 +284,7 @@ function getDestPath(baseDir: string | undefined, remotePath: string, destPathDi
 }
 
 export function getContentType(path: string) {
-	let ct = mime.contentType(path);
+	let ct = mime.lookup(path);
 	let contentType = (ct) ? ct : undefined;
 	return contentType;
 
