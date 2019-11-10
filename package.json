@@ -1,6 +1,6 @@
 {
   "name": "cloud-bucket",
-  "version": "0.2.11",
+  "version": "0.2.12-SNAPSHOT",
   "description": "Simple multi cloud API",
   "author": "Jeremy Chone <jeremy.chone@gmail.com>",
   "main": "dist/index.js",
@@ -10,10 +10,10 @@
     "url": "git://github.com/BriteSnow/node-cloud-bucket.git"
   },
   "dependencies": {
-    "@google-cloud/storage": "^4.0.0",
+    "@google-cloud/storage": "^4.1.1",
     "@types/micromatch": "^3.1.0",
     "@types/mime-types": "^2.1.0",
-    "aws-sdk": "^2.556.0",
+    "aws-sdk": "^2.568.0",
     "fs-extra-plus": "^0.5.11",
     "micromatch": "^4.0.2",
     "mime-types": "^2.1.24"
@@ -24,12 +24,12 @@
     "js-yaml": "^3.13.1",
     "mocha": "^6.2.2",
     "ts-node": "^8.4.1",
-    "typescript": "^3.6.4"
+    "typescript": "^3.7.2"
   },
   "scripts": {
-    "test": "TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts",
+    "test": "npm run prepare && TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts",
     "testd": "TS_NODE_FILES=true ./node_modules/.bin/mocha --inspect-brk ./test/*.spec.ts",
-    "prepare": "./node_modules/.bin/tsc"
+    "prepare": "rm -Rf dist/ && ./node_modules/.bin/tsc"
   },
   "license": "MIT",
   "bugs": {

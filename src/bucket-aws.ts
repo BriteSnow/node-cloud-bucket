@@ -1,7 +1,7 @@
 import { S3, Credentials } from 'aws-sdk';
 import { createWriteStream, readFile } from 'fs-extra-plus';
 import { PassThrough, Readable, Writable } from "stream";
-import { Bucket, BucketFile, buildFullDestPath, commonBucketDownload, getContentType, parsePrefixOrGlob, commonBucketCopy, commonDeleteAll, BucketFileDeleted, commonBucketUpload } from "./bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, commonBucketDownload, getContentType, parsePrefixOrGlob, commonBucketCopy, commonDeleteAll, BucketFileDeleted, commonBucketUpload, BucketType } from "./bucket-base";
 import micromatch = require('micromatch');
 
 // import {Object as AwsFile} from 'aws-sdk';
@@ -26,7 +26,7 @@ class AwsBucket implements Bucket<AwsFile> {
 	private s3: S3;
 	private baseParams: { Bucket: string };
 
-	get type(): string {
+	get type(): BucketType {
 		return 's3'
 	}
 
@@ -143,26 +143,6 @@ class AwsBucket implements Bucket<AwsFile> {
 				const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: fullDestPath, Body: localFileData, ContentType: contentType } }).promise();
 				return { bucket: this, path: fullDestPath, size: localFileData.length };
 			});
-	}
-
-	async uploadOld(localPath: string, destPath: string): Promise<BucketFile> {
-
-		const fullDestPath = buildFullDestPath(localPath, destPath);
-
-		process.stdout.write(`Uploading file ${localPath} to s3://${this.name}/${fullDestPath}`);
-
-		try {
-			const localFileData = await readFile(localPath);
-			const ContentType = getContentType(destPath);
-			const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: fullDestPath, Body: localFileData, ContentType } }).promise();
-			process.stdout.write(` - DONE\n`);
-			// FIXME: Needs to make sure we cannot get the object from the putObject result, and that the size can be assumed to be localFileData.length
-			return { bucket: this, path: fullDestPath, size: localFileData.length };
-		} catch (ex) {
-			process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
-			throw ex;
-		}
-
 	}
 
 	async uploadContent(path: string, content: string): Promise<void> {

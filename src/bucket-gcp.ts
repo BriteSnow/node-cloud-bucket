@@ -1,6 +1,6 @@
 import { Bucket as GoogleBucket, File as GoogleFile, Storage as GoogleStorage } from '@google-cloud/storage';
 import { Readable, Writable } from "stream";
-import { Bucket, BucketFile, buildFullDestPath, commonBucketCopy, commonBucketDownload, getContentType, parsePrefixOrGlob, commonDeleteAll, BucketFileDeleted, commonBucketUpload } from "./bucket-base";
+import { Bucket, BucketFile, buildFullDestPath, commonBucketCopy, commonBucketDownload, getContentType, parsePrefixOrGlob, commonDeleteAll, BucketFileDeleted, commonBucketUpload, BucketType } from "./bucket-base";
 import micromatch = require('micromatch');
 
 export async function getGcpBucket(cfg: GcpBucketCfg) {
@@ -27,7 +27,7 @@ export interface GcpBucketCfg {
 class GcpBucket implements Bucket<GoogleFile> {
 	readonly googleBucket: GoogleBucket;
 
-	get type(): string {
+	get type(): BucketType {
 		return 'gs'
 	}
 

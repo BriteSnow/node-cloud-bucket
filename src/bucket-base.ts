@@ -12,11 +12,13 @@ export interface BucketFile {
 	local?: string; // optional local file path
 }
 
+export type BucketType = 's3' | 'gs';
+
 export type BucketFileDeleted = BucketFile & { deleted: boolean };
 
 // Note: right now use generic default with F (file) any
 export interface Bucket<F = any> {
-	type: string;
+	type: BucketType;
 	name: string;
 
 	/** Return the path of a cloud "file object" */
