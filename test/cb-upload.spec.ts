@@ -23,13 +23,13 @@ async function testUploadContent(rawCfg: any) {
 	await bucket.uploadContent(txtPath, originalContent);
 	let content = await bucket.downloadAsText(txtPath);
 	let file = await bucket.getFile(txtPath);
-	strictEqual(file!.contentType, 'text/plain; charset=utf-8');
+	strictEqual(file!.contentType, 'text/plain');
 	strictEqual(content, originalContent);
 
 	await bucket.uploadContent(jsonPath, originalContent);
 	content = await bucket.downloadAsText(txtPath);
 	file = await bucket.getFile(txtPath);
-	strictEqual(file!.contentType, 'text/plain; charset=utf-8');
+	strictEqual(file!.contentType, 'text/plain');
 	strictEqual(content, originalContent);
 }
 
