@@ -25,8 +25,6 @@
 		"moduleResolution": "node", 
 
 		"declaration": true,
-		"declarationDir": "dist/types/",
-
 
 		// allow to import moment like: import moment from "moment"
 		"allowSyntheticDefaultImports": true
