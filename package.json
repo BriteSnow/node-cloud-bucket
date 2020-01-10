@@ -10,21 +10,21 @@
     "url": "git://github.com/BriteSnow/node-cloud-bucket.git"
   },
   "dependencies": {
-    "@google-cloud/storage": "^4.1.1",
-    "@types/micromatch": "^3.1.0",
+    "@google-cloud/storage": "^4.2.0",
+    "@types/micromatch": "^4.0.0",
     "@types/mime-types": "^2.1.0",
-    "aws-sdk": "^2.568.0",
-    "fs-extra-plus": "^0.5.11",
+    "aws-sdk": "^2.600.0",
+    "fs-extra-plus": "^0.5.14",
     "micromatch": "^4.0.2",
-    "mime-types": "^2.1.24"
+    "mime-types": "^2.1.26"
   },
   "devDependencies": {
     "@types/js-yaml": "^3.12.1",
     "@types/mocha": "^5.2.7",
     "js-yaml": "^3.13.1",
-    "mocha": "^6.2.2",
-    "ts-node": "^8.4.1",
-    "typescript": "^3.7.2"
+    "mocha": "^7.0.0",
+    "ts-node": "^8.6.0",
+    "typescript": "^3.7.4"
   },
   "scripts": {
     "test": "npm run prepare && TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts",
