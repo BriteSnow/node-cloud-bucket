@@ -19,8 +19,6 @@ export function signUrl(url: string, opts: SignUrlOptions) {
 
 
 //#region    ---------- S3 Signer ---------- 
-let s3_signer: crypto.Signer | undefined;
-
 function s3_sign_url(url: string, opts: SignUrlOptions) {
 
 	//// build custom policy

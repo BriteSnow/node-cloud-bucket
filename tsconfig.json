@@ -4,8 +4,8 @@
 
 {
 	"compilerOptions": {
-		// for node.js 8.4+, we can output to 2017 (Allow to have native async/await and all)
-		"target": "es2017",
+		// for node.js 12+
+		"target": "es2019",
 
 		// node.js does not support es2015, so, we tell typescript to output commonjs (we do not use rollup for server, just ts-node)
 		"module": "commonjs",

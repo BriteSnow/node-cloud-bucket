@@ -8,6 +8,9 @@
     "type": "git",
     "url": "git://github.com/BriteSnow/node-cloud-bucket.git"
   },
+  "engines": {
+    "node": ">=12"
+  },
   "dependencies": {
     "@google-cloud/storage": "^4.7.0",
     "@types/micromatch": "^4.0.1",
