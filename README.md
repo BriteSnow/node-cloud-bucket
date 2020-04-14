@@ -3,14 +3,15 @@ Simple cross cloud (for now GCP and AWS) bucket API.
 **Current Features:**
 - Supports AWS, GCP. 
 - Promise/async/await based.
+- signed url (with urlSigner supporting s3 wildcard signature)
 - Glob support (processed on the nodejs side)
 - Typed (Typescript)
 - SIMPLE
 
 **Roadmap:**
 - Stream copy between bucket
+- delimiter support
 - Azure support
-- API Refresh
 
 
 ## Usage
