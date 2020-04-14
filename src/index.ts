@@ -1,10 +1,10 @@
+import { AwsBucketCfg, getAwsBucket } from './bucket-aws';
 import { Bucket, BucketFile } from './bucket-base';
 import { GcpBucketCfg, getGcpBucket } from './bucket-gcp';
-import { getAwsBucket, AwsBucketCfg } from './bucket-aws';
 
+export { signUrl, SignUrlOptions, urlSigner } from './url-signer';
 export { Bucket, BucketFile };
 
-export { SignUrlOptions, signUrl } from './url-signer';
 
 
 export async function getBucket(rawCfg: any): Promise<Bucket> {

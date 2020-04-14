@@ -1,5 +1,5 @@
 # This is a example of a file to run the cloud bucket unit testing. 
-# Rename it to `~test-buckets.yaml` (same folder), and complete with  your value below
+# Rename it to `.test-buckets.yaml` (same folder), and complete with  your value below
 
 buckets:
 

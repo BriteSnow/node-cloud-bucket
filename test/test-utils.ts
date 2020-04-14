@@ -1,6 +1,6 @@
-import * as jsyaml from 'js-yaml';
 import * as fs from 'fs-extra-plus';
-import { saferRemove, mkdirp } from 'fs-extra-plus';
+import { mkdirp, saferRemove } from 'fs-extra-plus';
+import * as jsyaml from 'js-yaml';
 import { getBucket } from '../src';
 
 export const testDir = './test-data/dir/';
@@ -47,7 +47,7 @@ export async function cleanAll(rawCfg: any) {
 }
 
 export async function loadBucketCfg(name: string) {
-	let vdevBuckets: any = await loadYaml('./test-data/~test-buckets.yaml');
+	let vdevBuckets: any = await loadYaml('./test-data/.test-buckets.yaml');
 	return vdevBuckets.buckets[name];
 }
 //#endregion ---------- /Data Cleaners ---------- 
