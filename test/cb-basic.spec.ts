@@ -48,7 +48,6 @@ async function testGetFile(rawCfg: any) {
 	equal(file.size, 12);
 	ok(file.contentType, 'Has contentType');
 	ok(file.updated, 'Has updated');
-
 }
 
 

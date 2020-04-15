@@ -15,7 +15,7 @@
     "@google-cloud/storage": "^4.7.0",
     "@types/micromatch": "^4.0.1",
     "@types/mime-types": "^2.1.0",
-    "aws-sdk": "^2.656.0",
+    "aws-sdk": "^2.657.0",
     "fs-extra-plus": "^0.5.16",
     "micromatch": "^4.0.2",
     "mime-types": "^2.1.26"

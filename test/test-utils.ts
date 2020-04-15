@@ -4,7 +4,7 @@ import * as jsyaml from 'js-yaml';
 import { getBucket } from '../src';
 
 export const TEST_DIR = './test-data/dir/';
-export const TEST_TMP_DIR = './test-data/~tmp/';
+export const TEST_TMP_DIR = './test-data/.tmp/';
 export const TEST_FILE_NAME_01 = 'test-file-01.txt';
 export const TEST_FILE_LOCALPATH_01 = TEST_DIR + TEST_FILE_NAME_01;
 

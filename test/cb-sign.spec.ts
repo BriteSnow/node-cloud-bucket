@@ -11,26 +11,6 @@ describe('cb-sign', function () {
 		'cb-sign-basic': testSignBasic,
 		'cb-sign-signer': testSigner
 	});
-
-	// it('cb-sign-xp', async function () {
-	// 	const yamlData = await loadYaml('./test-data/.test-buckets.yaml');
-	// 	let xp_sign_opts: any = yamlData.xp_sign as { key: string, keyName: string };
-	// 	// console.log(xp_sign_opts);
-	// 	const opts: SignUrlOptions = {
-	// 		type: 's3',
-	// 		key: xp_sign_opts.key.trim() + '\n',
-	// 		keyName: xp_sign_opts.keyName,
-	// 		expires: new Date().getTime() + 3600 // one hour
-	// 	};
-	// 	const baseUrl = 'https://d1jn6p6krygb1m.cloudfront.net/';
-	// 	// const path = 'verb-dev-di-store/ec2-user/cases/case-000000000001/research-portal-user-personas-draft-not-for-review-2020-04-14.png';
-	// 	// const path = 'verb-dev-di-store/ec2-user/cases/case-000000000001/video-original.mp4';
-	// 	// const path = 'verb-dev-di-store/ec2-user/cases/case-000000000001/result.csv';
-	// 	const path = 'verb-dev-di-store/ec2-user/cases/case-000000000001/small.mp4';
-	// 	const url = `${baseUrl}${path}`;
-	// 	const signedUrl = signUrl(url, opts);
-	// 	console.log(signedUrl);
-	// });
 });
 
 async function testSignBasic(rawCfg: any) {

@@ -1,0 +1,217 @@
+import { Credentials, S3 } from 'aws-sdk';
+import { createWriteStream, readFile } from 'fs-extra-plus';
+import { PassThrough, Readable, Writable } from "stream";
+import { Driver, ListCloudFilesOptions } from "./driver";
+import { BucketFile, BucketType } from './types';
+import micromatch = require('micromatch');
+
+// import {Object as AwsFile} from 'aws-sdk';
+
+// type S3 = AWS.S3;
+type AwsFile = S3.Object & { ContentType?: string };
+
+export interface S3DriverCfg {
+	bucketName: string;
+	access_key_id: string;
+	access_key_secret: string;
+}
+
+export async function getS3Driver(cfg: S3DriverCfg) {
+	const credentials = new Credentials(cfg.access_key_id, cfg.access_key_secret);
+	// Create S3 service object
+	const s3 = new S3({ apiVersion: '2006-03-01', credentials });
+	return new S3Driver(s3, cfg.bucketName);
+}
+
+class S3Driver implements Driver<AwsFile> {
+	private s3: S3;
+	private baseParams: { Bucket: string };
+
+	get type(): BucketType {
+		return 's3'
+	}
+
+	get name(): string {
+		return this.baseParams.Bucket;
+	}
+
+	constructor(s3: S3, bucketName: string) {
+		this.s3 = s3;
+		this.baseParams = { Bucket: bucketName };
+	}
+
+	toFile(awsFile: AwsFile): Omit<BucketFile, 'bucket'> {
+		if (!awsFile) {
+			throw new Error(`No awsFile`);
+		}
+		const updated = (awsFile.LastModified) ? awsFile.LastModified.toISOString() : undefined;
+		return {
+			path: awsFile.Key!,
+			size: awsFile.Size,
+			contentType: awsFile.ContentType,
+			updated: updated
+		}
+	}
+
+	getPath(obj: AwsFile) {
+		return obj.Key!; // TODO: need to investigate when Key is empty in S3. 
+	}
+
+
+	async exists(path: string): Promise<boolean> {
+		const file = await this.getCloudFile(path);
+		return (file) ? true : false;
+	}
+
+	async getCloudFile(path: string): Promise<AwsFile | null> {
+		try {
+			const object = await this.s3.headObject({ ...this.baseParams, ...{ Key: path } }).promise();
+			// bucket: this,
+			// 	path,
+			// 	updated,
+			// 	size: object.ContentLength,
+			// 		contentType: object.ContentType	
+			const { ContentLength, ContentType, LastModified, ETag } = object;
+			const Key = path;
+			const Size = ContentLength;
+
+			const awsFile: AwsFile = { Key, Size, LastModified, ETag, ContentType };
+			return awsFile;
+		} catch (ex) {
+			//  if NotFound, return false
+			if (ex.code === 'NotFound') {
+				return null;
+			}
+			// otherwise, propagate the exception
+			else {
+				throw ex;
+			}
+		}
+
+	}
+
+	async listCloudFiles(opts: ListCloudFilesOptions): Promise<AwsFile[]> {
+
+		const { prefix, glob, delimiter } = opts;
+
+		// build the list params
+		let listParams: { Prefix?: string, Delimiter?: string } = {};
+		if (prefix) {
+			listParams.Prefix = prefix;
+		}
+		if (delimiter) {
+			listParams!.Delimiter = '/';
+		}
+		const params = { ...this.baseParams, ...listParams };
+
+		// perform the s3 list request
+		try {
+			const awsResult = await this.s3.listObjects(params).promise();
+			const awsFiles = awsResult.Contents as AwsFile[];
+
+			// if glob, filter again the result
+			let files: AwsFile[] = (!glob) ? awsFiles : awsFiles.filter(af => micromatch.isMatch(af.Key!, glob));
+
+			return files;
+		} catch (ex) {
+			throw ex;
+		}
+
+	}
+
+	async copyCloudFile(cf: AwsFile, dest: BucketFile): Promise<void> {
+		if (dest.bucket.type !== this.type) {
+			throw new Error(`destBucket type ${dest.bucket.type} does not match source bucket type ${this.type}. For now, cross bucket type copy not supported.`)
+		}
+		const sourcePath = cf.Key!;
+		const params = {
+			CopySource: `${this.name}/${sourcePath}`,
+			Bucket: dest.bucket.name,
+			Key: dest.path
+		}
+		await this.s3.copyObject(params).promise();
+	}
+
+
+	async downloadCloudFile(rawFile: AwsFile, localPath: string): Promise<void> {
+		const remotePath = rawFile.Key!;
+		const params = { ...this.baseParams, ...{ Key: remotePath } };
+		const remoteReadStream = this.s3.getObject(params).createReadStream();
+		const localWriteStream = createWriteStream(localPath);
+		const writePromise = new Promise((resolve, reject) => {
+			localWriteStream.once('close', () => {
+				resolve();
+			});
+			localWriteStream.once('error', (ex) => {
+				reject(ex);
+			});
+			remoteReadStream.pipe(localWriteStream);
+		});
+
+		await writePromise;
+	}
+
+	async uploadCloudFile(localPath: string, remoteFilePath: string, contentType?: string): Promise<AwsFile> {
+		const localFileData = await readFile(localPath, 'utf8');
+		const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: remoteFilePath, Body: localFileData, ContentType: contentType } }).promise();
+		// TODO: probably check the awsResult that match remoteFilePath
+		return { Key: remoteFilePath };
+
+	}
+
+	async downloadAsText(path: string): Promise<string> {
+		const params = { ...this.baseParams, ...{ Key: path } };
+		const obj = await this.s3.getObject(params).promise();
+		const content = obj.Body!.toString();
+		return content;
+	}
+
+	async uploadCloudContent(path: string, content: string, contentType?: string): Promise<void> {
+		await this.s3.putObject({ ...this.baseParams, ...{ Key: path, Body: content, ContentType: contentType } }).promise();
+	}
+
+	async createReadStream(path: string): Promise<Readable> {
+		const params = { ...this.baseParams, ...{ Key: path } };
+		const obj = this.s3.getObject(params);
+
+		if (!obj) {
+			throw new Error(`Object not found for ${path}`);
+		}
+		return obj.createReadStream();
+	}
+
+	async createWriteStream(path: string): Promise<Writable> {
+		var pass = new PassThrough();
+
+		const params = { ...this.baseParams, ...{ Key: path }, Body: pass };
+		this.s3.upload(params);
+
+		return pass;
+	}
+
+	async deleteCloudFile(path: string): Promise<boolean> {
+		// NOTE: For aws API, the s3.deleteObject seems to return exactly the same if the object existed or not. 
+		//       Therefore, we need to do an additional ping to know if the file exist  or not to return true/false
+		const exists = await this.exists(path);
+		if (exists) {
+			// NOTE: between the first test and this delete, the object might have been deleted, but since s3.deleteObjecct
+			//       does not seems to tell if the object exits or not, this is the best can do.
+			await this.s3.deleteObject({ ...this.baseParams, ...{ Key: path } }).promise();
+			return true;
+		} else {
+			process.stdout.write(` - Skipped (object not found)\n`);
+			return false;
+		}
+
+	}
+	//#region    ---------- Private ---------- 
+
+
+
+
+	//#endregion ---------- /Private ---------- 
+}
+
+
+
+
