@@ -1,7 +1,7 @@
-import { S3, Credentials } from 'aws-sdk';
+import { Credentials, S3 } from 'aws-sdk';
 import { createWriteStream, readFile } from 'fs-extra-plus';
 import { PassThrough, Readable, Writable } from "stream";
-import { Bucket, BucketFile, buildFullDestPath, commonBucketDownload, getContentType, parsePrefixOrGlob, commonBucketCopy, commonDeleteAll, BucketFileDeleted, commonBucketUpload, BucketType } from "./bucket-base";
+import { Bucket, BucketFile, BucketFileDeleted, BucketType, commonBucketCopy, commonBucketDownload, commonBucketUpload, commonDeleteAll, getContentType, InternalListOptions, ListOptions, parseListOptions } from "./bucket-base";
 import micromatch = require('micromatch');
 
 // import {Object as AwsFile} from 'aws-sdk';
@@ -76,14 +76,15 @@ class AwsBucket implements Bucket<AwsFile> {
 	 * 
 	 * @param path prefix path or glob (the string before the first '*' will be used as prefix)
 	 */
-	async list(prefixOrGlob?: string): Promise<BucketFile[]> {
-		const awsFiles = await this.listAwsFiles(prefixOrGlob);
+	async list(optsOrPrefix?: ListOptions | string): Promise<BucketFile[]> {
+
+		const awsFiles = await this.listAwsFiles(parseListOptions(optsOrPrefix));
 
 		return awsFiles.map(gf => this.toFile(gf));
 	}
 
 	async copy(pathOrGlob: string, destDir: string | BucketFile): Promise<void> {
-		const awsFiles = await this.listAwsFiles(pathOrGlob);
+		const awsFiles = await this.listAwsFiles(parseListOptions(pathOrGlob));
 
 		const files = await commonBucketCopy(this, awsFiles, pathOrGlob, destDir,
 			async (awsFile: AWS.S3.Object, dest: BucketFile) => {
@@ -103,7 +104,7 @@ class AwsBucket implements Bucket<AwsFile> {
 	}
 
 	async download(pathOrGlob: string, localPath: string): Promise<BucketFile[]> {
-		const awsFiles = await this.listAwsFiles(pathOrGlob);
+		const awsFiles = await this.listAwsFiles(parseListOptions(pathOrGlob));
 
 		const files = await commonBucketDownload(this, awsFiles, pathOrGlob, localPath,
 			async (object: AwsFile, localPath) => {
@@ -205,13 +206,16 @@ class AwsBucket implements Bucket<AwsFile> {
 	/**
 	 * List the googleFiles for this bucket;
 	 */
-	async listAwsFiles(prefixOrGlob?: string): Promise<AwsFile[]> {
-		const { prefix, glob } = parsePrefixOrGlob(prefixOrGlob);
+	async listAwsFiles(opts: InternalListOptions): Promise<AwsFile[]> {
+		const { prefix, glob, delimiter } = opts;
 
 		// build the list params
-		let listParams: { Prefix?: string } | undefined = undefined;
+		let listParams: { Prefix?: string, Delimiter?: string } = {};
 		if (prefix) {
-			listParams = { Prefix: prefix };
+			listParams.Prefix = prefix;
+		}
+		if (delimiter) {
+			listParams!.Delimiter = '/';
 		}
 		const params = { ...this.baseParams, ...listParams };
 

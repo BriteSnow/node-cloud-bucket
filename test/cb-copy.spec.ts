@@ -1,5 +1,5 @@
 import { ok, rejects, strictEqual } from 'assert';
-import { cleanAll, generateTests, testLocalFilePath } from './test-utils';
+import { cleanAll, generateTests, TEST_FILE_LOCALPATH_01 } from './test-utils';
 
 const remoteFile01 = 'test-file-01.txt';
 const remoteFile02 = 'test-file-02.txt';
@@ -20,7 +20,7 @@ async function testCopyToDir(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
 
 	// upload file
-	await bucket.upload(testLocalFilePath, remoteFile01);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile01);
 
 	// Test Success: copy file
 	await bucket.copy(remoteFile01, 'test-copy-dir/');
@@ -34,8 +34,8 @@ async function testCopyToFile(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
 
 	// upload file
-	await bucket.upload(testLocalFilePath, remoteFile01);
-	await bucket.upload(testLocalFilePath, remoteFile02);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile01);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile02);
 
 	// Test Exception: can't copy multiple files 
 	await rejects(async function () {

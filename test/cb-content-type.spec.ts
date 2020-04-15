@@ -1,5 +1,5 @@
 import { strictEqual } from 'assert';
-import { cleanAll, generateTests, testDir } from './test-utils';
+import { cleanAll, generateTests, TEST_DIR } from './test-utils';
 
 
 describe('cb-content-type', function () {
@@ -19,7 +19,7 @@ async function testContentType(rawCfg: any) {
 	const items = [{ name: 'test-file-04.html', ct: 'text/html' }, { name: 'test-file-02.json', ct: 'application/json' }];
 
 	for (const item of items) {
-		await bucket.upload(`${testDir}/${item.name}`, item.name);
+		await bucket.upload(`${TEST_DIR}/${item.name}`, item.name);
 		const file = await bucket.getFile(item.name);
 		strictEqual(file?.contentType, item.ct);
 	}

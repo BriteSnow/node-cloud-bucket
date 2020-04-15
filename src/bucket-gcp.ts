@@ -1,6 +1,6 @@
-import { Bucket as GoogleBucket, File as GoogleFile, Storage as GoogleStorage } from '@google-cloud/storage';
+import { Bucket as GoogleBucket, File as GoogleFile, GetFilesOptions, Storage as GoogleStorage } from '@google-cloud/storage';
 import { Readable, Writable } from "stream";
-import { Bucket, BucketFile, buildFullDestPath, commonBucketCopy, commonBucketDownload, getContentType, parsePrefixOrGlob, commonDeleteAll, BucketFileDeleted, commonBucketUpload, BucketType } from "./bucket-base";
+import { Bucket, BucketFile, BucketFileDeleted, BucketType, buildFullDestPath, commonBucketCopy, commonBucketDownload, commonBucketUpload, commonDeleteAll, getContentType, InternalListOptions, ListOptions, parseListOptions } from "./bucket-base";
 import micromatch = require('micromatch');
 
 export async function getGcpBucket(cfg: GcpBucketCfg) {
@@ -71,14 +71,14 @@ class GcpBucket implements Bucket<GoogleFile> {
 	 * 
 	 * @param path prefix path or glob (the string before the first '*' will be used as prefix)
 	 */
-	async list(prefixOrGlob?: string): Promise<BucketFile[]> {
-		const googleFiles = await this.listGoogleFiles(prefixOrGlob);
+	async list(optsOrPrefix?: ListOptions | string): Promise<BucketFile[]> {
+		const googleFiles = await this.listGoogleFiles(parseListOptions(optsOrPrefix));
 
 		return googleFiles.map(gf => this.toFile(gf));
 	}
 
 	async copy(pathOrGlob: string, destDir: string | BucketFile): Promise<void> {
-		const gfiles = await this.listGoogleFiles(pathOrGlob);
+		const gfiles = await this.listGoogleFiles(parseListOptions(pathOrGlob));
 
 		const files = await commonBucketCopy(this, gfiles, pathOrGlob, destDir,
 			async (googleFile: GoogleFile, dest: BucketFile) => {
@@ -94,7 +94,7 @@ class GcpBucket implements Bucket<GoogleFile> {
 	}
 
 	async download(pathOrGlob: string, localPath: string): Promise<BucketFile[]> {
-		const googleFiles = await this.listGoogleFiles(pathOrGlob);
+		const googleFiles = await this.listGoogleFiles(parseListOptions(pathOrGlob));
 
 		const files = await commonBucketDownload(this, googleFiles, pathOrGlob, localPath,
 			async (gf: GoogleFile, localPath) => {
@@ -214,12 +214,14 @@ class GcpBucket implements Bucket<GoogleFile> {
 	/**
 	 * List the googleFiles for this bucket;
 	 */
-	async listGoogleFiles(prefixOrGlob?: string): Promise<GoogleFile[]> {
-		// extract the eventual prefix and glob from param
-		const { prefix, glob } = parsePrefixOrGlob(prefixOrGlob);
+	async listGoogleFiles(opts: InternalListOptions): Promise<GoogleFile[]> {
+		const { prefix, glob, delimiter } = opts;
 
 		// build the query options and perform the request
-		let baseQuery = { autoPaginate: true };
+		let baseQuery: GetFilesOptions = { autoPaginate: true };
+		if (delimiter === true) {
+			baseQuery.delimiter = '/';
+		}
 		let getListOpts = (prefix) ? { ...baseQuery, prefix } : baseQuery;
 		const result = await this.googleBucket.getFiles(getListOpts);
 		let gfList = result[0] || [];

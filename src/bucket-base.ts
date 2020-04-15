@@ -1,7 +1,7 @@
-import * as Path from 'path';
-import { mkdirp, glob } from 'fs-extra-plus';
-import { Readable, Writable } from 'stream';
+import { glob, mkdirp } from 'fs-extra-plus';
 import * as mime from 'mime-types';
+import * as Path from 'path';
+import { Readable, Writable } from 'stream';
 
 export interface BucketFile {
 	bucket: Bucket;
@@ -32,7 +32,7 @@ export interface Bucket<F = any> {
 	 */
 	getFile(path: String): Promise<BucketFile | null>;
 
-	list(prefixOrGlob?: String): Promise<BucketFile[]>;
+	list(optsOrPrefix?: ListArg): Promise<BucketFile[]>;
 
 	/**
 	 * Will copy one or more file to a destination file (then require single match, i.e. no glob), 
@@ -71,6 +71,24 @@ export interface Bucket<F = any> {
 
 }
 
+/** Interface used for the bucket.list */
+export interface ListOptions {
+	prefix?: string; // the prefix or glob
+	delimiter?: boolean; // if true, the '/' delimiter will be set (might allow to set specific char later)
+}
+
+/** Argument type for listing a set of bucket item for .list and .download
+ * - when string means it is the prefix (which can be of glob format)
+ * - when ListOptions prefix can be specified as property.
+ */
+type ListArg = ListOptions | string;
+
+/** Internal Interface to the list implementation */
+export interface InternalListOptions {
+	prefix?: string; // the prefix (only)
+	glob?: string; // the eventual glob
+	delimiter?: boolean; // if true, the '/' delimiter will be set (might allow to set specific char later)
+}
 
 //#region    ---------- Common Bucket Utils ---------- 
 /**
@@ -102,13 +120,17 @@ export function buildFullDestPath(localPath: string, destPath: string) {
 	return fullDestPath;
 }
 
+export function parseListOptions(optsOrPrefix?: ListOptions | string): InternalListOptions {
+	const { prefix, glob } = (typeof optsOrPrefix === 'string') ? parsePrefixOrGlob(optsOrPrefix) : parsePrefixOrGlob(optsOrPrefix?.prefix);
+	return { prefix, glob, delimiter: (typeof optsOrPrefix !== 'string') ? optsOrPrefix?.delimiter : undefined }
+}
 /**
  * Return a clean prefix and glob when defined in the string. Clean prefix, meaning, glob less one, 
  * that can be passed to most cloud storage api. 
  * 
  * @param prefixOrGlob undefined, null, e.g., 'some-prefix', 'folder/', 'folder/glob-pattern.*'
  * @returns {prefix, glob, baseDir} 
- * 					- prefix is the first characters unitl the first glob character ('*')
+ * 					- prefix is the first characters until the first glob character ('*')
  * 					- glob is prefixOrGlob value if it is a glob, otherwise undefined.
  * 					- baseDir is the eventual longest directory path without any glob char (ending with '/') 
  */

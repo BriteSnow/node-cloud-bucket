@@ -3,10 +3,10 @@ import { mkdirp, saferRemove } from 'fs-extra-plus';
 import * as jsyaml from 'js-yaml';
 import { getBucket } from '../src';
 
-export const testDir = './test-data/dir/';
-export const testTmpDir = './test-data/~tmp/';
-export const testFileName = 'test-file-01.txt';
-export const testLocalFilePath = testDir + testFileName;
+export const TEST_DIR = './test-data/dir/';
+export const TEST_TMP_DIR = './test-data/~tmp/';
+export const TEST_FILE_NAME_01 = 'test-file-01.txt';
+export const TEST_FILE_LOCALPATH_01 = TEST_DIR + TEST_FILE_NAME_01;
 
 //#region    ---------- Data Loaders ---------- 
 export async function yaml(content: string) {
@@ -26,8 +26,8 @@ export async function loadYaml(path: string) {
 //#region    ---------- Data Cleaners ---------- 
 export async function cleanTmpDir() {
 	//// clean local folder
-	await saferRemove(testTmpDir);
-	await mkdirp(testTmpDir);
+	await saferRemove(TEST_TMP_DIR);
+	await mkdirp(TEST_TMP_DIR);
 }
 
 export async function cleanAll(rawCfg: any) {

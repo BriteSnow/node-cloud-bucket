@@ -1,8 +1,7 @@
 import { strictEqual } from 'assert';
 import { glob, readFile } from 'fs-extra-plus';
 import { basename } from 'path';
-import { cleanAll, cleanTmpDir, generateTests, testFileName, testLocalFilePath, testTmpDir } from './test-utils';
-
+import { cleanAll, cleanTmpDir, generateTests, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01, TEST_TMP_DIR } from './test-utils';
 
 
 const remoteFile01 = 'test-file-01.txt';
@@ -27,10 +26,10 @@ describe('cb-download', function () {
 async function testDownloadAsText(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
 
-	await bucket.upload(testLocalFilePath, testFileName);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01);
 
-	const content = await bucket.downloadAsText(testFileName);
-	const localFile = await readFile(testLocalFilePath, 'UTF8');
+	const content = await bucket.downloadAsText(TEST_FILE_NAME_01);
+	const localFile = await readFile(TEST_FILE_LOCALPATH_01, 'UTF8');
 	strictEqual(content, localFile, 'file content');
 
 }
@@ -38,13 +37,13 @@ async function testDownloadAsText(rawCfg: any) {
 async function testDownloadRename(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
 
-	await bucket.upload(testLocalFilePath, testFileName);
-	const newLocalFilePath = testTmpDir + `new-${testFileName}`;
+	await bucket.upload(TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01);
+	const newLocalFilePath = TEST_TMP_DIR + `new-${TEST_FILE_NAME_01}`;
 
-	await bucket.download(testFileName, newLocalFilePath);
+	await bucket.download(TEST_FILE_NAME_01, newLocalFilePath);
 
 	// check  the file content
-	const originalContent = await readFile(testLocalFilePath, 'UTF8');
+	const originalContent = await readFile(TEST_FILE_LOCALPATH_01, 'UTF8');
 	const newContent = await readFile(newLocalFilePath, 'UTF8');
 	strictEqual(newContent, originalContent, 'files content');
 
@@ -54,24 +53,24 @@ async function testDownloadRename(rawCfg: any) {
 async function testDownloadGlob(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
 
-	await bucket.upload(testLocalFilePath, remoteFile01);
-	await bucket.upload(testLocalFilePath, remoteFile02);
-	await bucket.upload(testLocalFilePath, remoteFile03);
-	await bucket.upload(testLocalFilePath, remoteFile04);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile01);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile02);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile03);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile04);
 
 	// download with glob
-	let bfiles = await bucket.download('test-dir/**/*-03.txt', testTmpDir);
+	let bfiles = await bucket.download('test-dir/**/*-03.txt', TEST_TMP_DIR);
 	strictEqual(bfiles.length, 2);
 	strictEqual(bfiles[0].path, 'test-dir/sub-dir/test-file-sub-03.txt')
 	strictEqual(bfiles[0].local, './test-data/~tmp/sub-dir/test-file-sub-03.txt')
 
-	let localFiles = await glob(testTmpDir + '**/*.*');
+	let localFiles = await glob(TEST_TMP_DIR + '**/*.*');
 	strictEqual(localFiles.length, 2);
 
 	// download from folder
 	await cleanTmpDir();
-	await bucket.download('test-dir/', testTmpDir);
-	localFiles = await glob(testTmpDir + '**/*.*');
+	await bucket.download('test-dir/', TEST_TMP_DIR);
+	localFiles = await glob(TEST_TMP_DIR + '**/*.*');
 	strictEqual(3, localFiles.length); // 3 because remoteFile01 is not under 'test-dir/'
 }
 
@@ -79,12 +78,12 @@ async function testDownload(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
 
 	// upload file
-	await bucket.upload(testLocalFilePath, remoteFile01);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile01);
 
 	// download file
-	const [remoteFile] = await bucket.download(remoteFile01, testTmpDir);
+	const [remoteFile] = await bucket.download(remoteFile01, TEST_TMP_DIR);
 
-	const str = await readFile(testTmpDir + basename(remoteFile.path), 'UTF8');
+	const str = await readFile(TEST_TMP_DIR + basename(remoteFile.path), 'UTF8');
 	strictEqual(str, 'test file 01');
 }
 

@@ -1,6 +1,6 @@
-import { fail, ok, strictEqual } from 'assert';
+import { deepStrictEqual as equal, fail, ok } from 'assert';
 import { getBucket } from '../src/index';
-import { checkIsoDate, cleanAll, generateTests, testLocalFilePath, testFileName } from './test-utils';
+import { checkIsoDate, cleanAll, generateTests, TEST_DIR, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01 } from './test-utils';
 
 
 const remoteFile01 = 'test-file-01.txt';
@@ -17,7 +17,8 @@ describe('cb-basic', function () {
 		'cb-basic-getFile-null': testGetFileNull,
 		'cb-basic-exists': testExists,
 		'cb-basic-updated': testUpdated,
-		'cb-basic-list': testList
+		'cb-basic-list': testList,
+		'cb-basic-delim': testDelim
 	});
 
 });
@@ -26,25 +27,25 @@ describe('cb-basic', function () {
 async function testExists(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
 
-	let exists = await bucket.exists(testFileName);
-	strictEqual(exists, false, 'File should not exists');
+	let exists = await bucket.exists(TEST_FILE_NAME_01);
+	equal(exists, false, 'File should not exists');
 
-	await bucket.upload(testLocalFilePath, testFileName);
-	exists = await bucket.exists(testFileName);
-	strictEqual(exists, true, 'File should exists');
+	await bucket.upload(TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01);
+	exists = await bucket.exists(TEST_FILE_NAME_01);
+	equal(exists, true, 'File should exists');
 }
 
 async function testGetFile(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
-	await bucket.upload(testLocalFilePath, remoteFile01);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile01);
 
 	const file = await bucket.getFile(remoteFile01);
 	if (!file) {
 		fail(`No bucket file found for ${remoteFile01}`);
 		return;
 	}
-	strictEqual(file.path, remoteFile01)
-	strictEqual(file.size, 12);
+	equal(file.path, remoteFile01)
+	equal(file.size, 12);
 	ok(file.contentType, 'Has contentType');
 	ok(file.updated, 'Has updated');
 
@@ -56,7 +57,7 @@ async function testGetFileNull(rawCfg: any) {
 
 	// Should not throw an exception when not found, just return null
 	const file = await bucket.getFile(remoteFile01);
-	strictEqual(file, null, 'should be null');
+	equal(file, null, 'should be null');
 
 	// TODO: change rawCfg for to test that auth exception are propagated
 }
@@ -64,7 +65,7 @@ async function testGetFileNull(rawCfg: any) {
 async function testUpdated(rawCfg: any) {
 	// clean and upload one test file
 	const bucket = await cleanAll(rawCfg);
-	await bucket.upload(testLocalFilePath, remoteFile01);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile01);
 
 	// check that the getFile return correct date format
 	const file = await bucket.getFile(remoteFile01);
@@ -88,28 +89,52 @@ async function testList(rawCfg: any) {
 
 	// Test the above 
 	let files = await bucket.list();
-	strictEqual(files.length, 0, 'Post cleanup (should be 0)');
+	equal(files.length, 0, 'Post cleanup (should be 0)');
 
 	// Test upload
-	await bucket.upload(testLocalFilePath, remoteFile01);
-	await bucket.upload(testLocalFilePath, remoteFile02);
-	await bucket.upload(testLocalFilePath, remoteFile03);
-	await bucket.upload(testLocalFilePath, remoteFile04);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile01);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile02);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile03);
+	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile04);
 
 	// Test basic list
 	files = await bucket.list();
-	strictEqual(files.length, 4, 'All files');
+	equal(files.length, 4, 'All files');
 
 	// Test list with simple prefix
 	files = await bucket.list('test-dir/');
-	strictEqual(files.length, 3, '"test-dir/" files');
+	equal(files.length, 3, '"test-dir/" files');
 
 	// Test list with glob
 	files = await bucket.list('test-dir/**/*-03.txt');
-	strictEqual(files.length, 2, '"test-dir/**/*-03.txt" files');
+	equal(files.length, 2, '"test-dir/**/*-03.txt" files');
 }
 
 
+async function testDelim(rawCfg: any) {
+	const bucket = await getBucket(rawCfg);
+	// Clean test space
+	await cleanAll(rawCfg);
+	await bucket.upload(TEST_DIR, 'some-remote-base/');
+	await bucket.upload(TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01 + '.other');
+
+	// get only root with delim, should be only 1
+	let files = await bucket.list({ delimiter: true });
+	equal(files.length, 1);
+
+	// test all files from root
+	files = await bucket.list();
+	equal(files.length, 5);
+
+	// test from dir
+	files = await bucket.list({ prefix: 'some-remote-base/', delimiter: true });
+	equal(files.length, 3);
+
+	// test from dir all
+	files = await bucket.list({ prefix: 'some-remote-base/' });
+	equal(files.length, 4);
+
+}
 
 
 //#endregion ---------- /Test Functions ----------

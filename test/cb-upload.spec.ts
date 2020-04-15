@@ -1,5 +1,5 @@
 import { strictEqual } from 'assert';
-import { cleanAll, generateTests, testDir } from './test-utils';
+import { cleanAll, generateTests, TEST_DIR } from './test-utils';
 
 
 describe('cb-upload', function () {
@@ -36,7 +36,7 @@ async function testUploadContent(rawCfg: any) {
 async function testUploadDir(rawCfg: any) {
 	const bucket = await cleanAll(rawCfg);
 
-	await bucket.upload(testDir, 'some-remote-base/');
+	await bucket.upload(TEST_DIR, 'some-remote-base/');
 
 	const remoteFiles = await bucket.list();
 	strictEqual(remoteFiles.length, 4); // TODO: needs to check each file name at least

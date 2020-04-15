@@ -30,6 +30,7 @@
   },
   "scripts": {
     "test": "TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts",
+    "testw": "TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts --watch --watch-files './test/**/*.ts','./src/**/*.ts'",
     "testd": "TS_NODE_FILES=true ./node_modules/.bin/mocha --inspect-brk ./test/*.spec.ts",
     "prepare": "rm -Rf dist/ && ./node_modules/.bin/tsc"
   },
