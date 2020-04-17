@@ -1,8 +1,9 @@
 import { Credentials, S3 } from 'aws-sdk';
-import { createWriteStream, readFile } from 'fs-extra-plus';
+import { createReadStream, createWriteStream } from 'fs-extra-plus';
 import { PassThrough, Readable, Writable } from "stream";
 import { Driver, ListCloudFilesOptions } from "./driver";
 import { BucketFile, BucketType } from './types';
+
 import micromatch = require('micromatch');
 
 // import {Object as AwsFile} from 'aws-sdk';
@@ -152,8 +153,8 @@ class S3Driver implements Driver<AwsFile> {
 	}
 
 	async uploadCloudFile(localPath: string, remoteFilePath: string, contentType?: string): Promise<AwsFile> {
-		const localFileData = await readFile(localPath, 'utf8');
-		const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: remoteFilePath, Body: localFileData, ContentType: contentType } }).promise();
+		const readable = createReadStream(localPath)
+		const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: remoteFilePath, Body: readable, ContentType: contentType } }).promise();
 		// TODO: probably check the awsResult that match remoteFilePath
 		return { Key: remoteFilePath };
 
@@ -167,6 +168,7 @@ class S3Driver implements Driver<AwsFile> {
 	}
 
 	async uploadCloudContent(path: string, content: string, contentType?: string): Promise<void> {
+
 		await this.s3.putObject({ ...this.baseParams, ...{ Key: path, Body: content, ContentType: contentType } }).promise();
 	}
 

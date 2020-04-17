@@ -16,6 +16,11 @@ types/
 # Ignore test/test-out
 test/test-out
 
+# Ignore the experiment test file
+xp.spec.ts
+
+cp
+
 node_modules/
 npm-debug.log
 
