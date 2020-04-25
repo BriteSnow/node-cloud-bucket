@@ -2,10 +2,10 @@ import { Bucket, newBucket } from './bucket';
 import { Driver } from './driver';
 import { getS3Driver, S3DriverCfg } from './driver-aws';
 import { getGsDriver, GsDriverCfg } from './driver-gcp';
-import { BucketFile } from './types';
+import { BucketFile, ListOptions, ListResult } from './types';
 
 export { signUrl, SignUrlOptions, urlSigner } from './url-signer';
-export { Bucket, BucketFile };
+export { Bucket, BucketFile, ListOptions, ListResult };
 
 
 

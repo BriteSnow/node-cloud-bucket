@@ -18,10 +18,20 @@ export interface BucketFile {
 
 export type BucketFileDeleted = BucketFile & { deleted: boolean };
 
+
+export interface ListResult {
+	files: BucketFile[];
+	dirs?: string[];
+	nextMarker?: string;
+}
+
+
 /** Interface used for the bucket.list */
 export interface ListOptions {
 	prefix?: string; // the prefix or glob
-	delimiter?: boolean; // if true, the '/' delimiter will be set (might allow to set specific char later)
+	directory?: boolean; // if true, the '/' delimiter will be set (might allow to set specific char later)
+	marker?: string;
+	limit?: number;
 }
 
 /** Argument type for listing a set of bucket item for .list and .download

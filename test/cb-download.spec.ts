@@ -44,8 +44,6 @@ async function testDownloadRename(rawCfg: any) {
 	// check  the file content
 	const originalContent = await readFile(TEST_FILE_LOCALPATH_01, 'UTF8');
 	const newContent = await readFile(newLocalFilePath, 'UTF8');
-	console.log('org>>>>\n', originalContent)
-	console.log('new>>>>\n', newContent)
 	strictEqual(newContent, originalContent, 'files content');
 
 }

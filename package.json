@@ -1,6 +1,6 @@
 {
   "name": "cloud-bucket",
-  "version": "0.2.16",
+  "version": "0.3.0-SNAPSHOT",
   "description": "Simple multi cloud API",
   "author": "Jeremy Chone <jeremy.chone@gmail.com>",
   "main": "dist/index.js",
@@ -15,17 +15,17 @@
     "@google-cloud/storage": "^4.7.0",
     "@types/micromatch": "^4.0.1",
     "@types/mime-types": "^2.1.0",
-    "aws-sdk": "^2.657.0",
+    "aws-sdk": "^2.662.0",
     "fs-extra-plus": "^0.5.16",
     "micromatch": "^4.0.2",
-    "mime-types": "^2.1.26"
+    "mime-types": "^2.1.27"
   },
   "devDependencies": {
     "@types/js-yaml": "^3.12.3",
     "@types/mocha": "^7.0.2",
     "js-yaml": "^3.13.1",
     "mocha": "^7.1.1",
-    "ts-node": "^8.8.2",
+    "ts-node": "^8.9.0",
     "typescript": "^3.8.3"
   },
   "scripts": {

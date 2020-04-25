@@ -72,7 +72,7 @@ async function testUpdated(rawCfg: any) {
 	checkIsoDate(file!.updated);
 
 	// check that list return correct date format
-	const files = await bucket.list(remoteFile01);
+	const files = await bucket.listFiles(remoteFile01);
 	ok(files.length === 1, `list(${remoteFile01}) return incorrect match ${files.length}`);
 	for (const file of files) {
 		checkIsoDate(file.updated);
@@ -87,7 +87,7 @@ async function testList(rawCfg: any) {
 	await cleanAll(rawCfg);
 
 	// Test the above 
-	let files = await bucket.list();
+	let files = await bucket.listFiles();
 	equal(files.length, 0, 'Post cleanup (should be 0)');
 
 	// Test upload
@@ -97,15 +97,15 @@ async function testList(rawCfg: any) {
 	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile04);
 
 	// Test basic list
-	files = await bucket.list();
+	files = await bucket.listFiles();
 	equal(files.length, 4, 'All files');
 
 	// Test list with simple prefix
-	files = await bucket.list('test-dir/');
+	files = await bucket.listFiles('test-dir/');
 	equal(files.length, 3, '"test-dir/" files');
 
 	// Test list with glob
-	files = await bucket.list('test-dir/**/*-03.txt');
+	files = await bucket.listFiles('test-dir/**/*-03.txt');
 	equal(files.length, 2, '"test-dir/**/*-03.txt" files');
 }
 
@@ -118,19 +118,19 @@ async function testDelim(rawCfg: any) {
 	await bucket.upload(TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01 + '.other');
 
 	// get only root with delim, should be only 1
-	let files = await bucket.list({ delimiter: true });
+	let files = await bucket.listFiles({ directory: true });
 	equal(files.length, 1);
 
 	// test all files from root
-	files = await bucket.list();
+	files = await bucket.listFiles();
 	equal(files.length, 5);
 
 	// test from dir
-	files = await bucket.list({ prefix: 'some-remote-base/', delimiter: true });
+	files = await bucket.listFiles({ prefix: 'some-remote-base/', directory: true });
 	equal(files.length, 3);
 
 	// test from dir all
-	files = await bucket.list({ prefix: 'some-remote-base/' });
+	files = await bucket.listFiles({ prefix: 'some-remote-base/' });
 	equal(files.length, 4);
 
 }

@@ -50,7 +50,7 @@ async function testUploadDir(rawCfg: any) {
 
 	await bucket.upload(TEST_DIR, 'some-remote-base/');
 
-	const remoteFiles = await bucket.list();
+	const remoteFiles = await bucket.listFiles();
 	equal(remoteFiles.length, 4); // TODO: needs to check each file name at least
 }
 

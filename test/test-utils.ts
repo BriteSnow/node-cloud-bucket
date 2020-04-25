@@ -36,7 +36,7 @@ export async function cleanAll(rawCfg: any) {
 	//// clean remove bucket
 	const bucket = await getBucket(rawCfg);
 
-	const files = await bucket.list();
+	const files = await bucket.listFiles();
 
 	for (const f of files) {
 		await bucket.delete(f.path);

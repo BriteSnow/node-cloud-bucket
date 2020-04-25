@@ -2,15 +2,14 @@ Simple cross cloud (for now GCP and AWS) bucket API.
 
 **Current Features:**
 - Supports AWS, GCP. 
+- Directory support (i.e. directory: true makes .dirs = string[])
 - Promise/async/await based.
 - signed url (with urlSigner supporting s3 wildcard signature)
 - Glob support (processed on the nodejs side)
 - Typed (Typescript)
-- SIMPLE
 
 **Roadmap:**
 - Stream copy between bucket
-- delimiter support
 - Azure support
 
 
@@ -50,15 +49,19 @@ const remoteFiles = await bucket.upload('./some-dir/', 'remote-base-dir/');
 
 //// List
 
-const files = await bucket.list();
+const files = await bucket.listFiles();
 // files: File[] (all files contained in this bucket, no pagination yet)
 
-const files = await bucket.list('in-this-folder/');
-// files: File[] (only file with the prefix 'in-this-folder/);
+const files = await bucket.listFiles('in-this-folder/', {limit: 300});
+// files: File[] (only file with the prefix 'in-this-folder/) and only the first 300;
 
-const files = await bucket.list('in-this-folder/**/*.txt');
+const files = await bucket.listFiles('in-this-folder/**/*.txt');
 // files: File[] (only file with the prefix 'in-this-folder/ and matching the glob);
 // Note: Glob processing happen on the nodejs side.
+
+// More result info by calling the list method. 
+const listResult = await bucket.list('in-this-folder/', {directory: true});
+// {files: BucketFile[], dirs?: string[], nextMarker}
 
 
 //// Download

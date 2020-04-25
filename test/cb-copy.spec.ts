@@ -26,7 +26,7 @@ async function testCopyToDir(rawCfg: any) {
 	await bucket.copy(remoteFile01, 'test-copy-dir/');
 
 	// Test basic list
-	const files = await bucket.list();
+	const files = await bucket.listFiles();
 	strictEqual(files.length, 2, 'One file uploaded, one file copied');
 }
 

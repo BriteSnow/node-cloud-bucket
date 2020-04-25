@@ -41,13 +41,13 @@ async function testDeleteAll(rawCfg: any) {
 	await bucket.upload(TEST_FILE_LOCALPATH_01, remoteFile04);
 
 	// check that we have the right number of files
-	let files = await bucket.list();
+	let files = await bucket.listFiles();
 	strictEqual(files.length, 4, 'before delete all');
 
 	// deleteAll chekc that we have 0 files
 	let deletedFiles = await bucket.deleteAll(files);
 	strictEqual(deletedFiles.length, 4, 'should have 4 deleted files')
-	files = await bucket.list();
+	files = await bucket.listFiles();
 	strictEqual(files.length, 0, 'after delete all');
 
 	// redelete deleted files, the deletedFiles.lenght === 0 and no error thrown on not found

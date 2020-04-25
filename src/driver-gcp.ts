@@ -1,6 +1,6 @@
 import { Bucket as GoogleBucket, File as GoogleFile, GetFilesOptions, Storage as GoogleStorage } from '@google-cloud/storage';
 import { Readable, Writable } from "stream";
-import { Driver, ListCloudFilesOptions } from "./driver";
+import { Driver, ListCloudFilesOptions, ListCloudFilesResult } from "./driver";
 import { BucketFile, BucketType } from './types';
 import micromatch = require('micromatch');
 
@@ -84,24 +84,38 @@ class GcpDriver implements Driver<GoogleFile> {
 	 * 
 	 * @param path prefix path or glob (the string before the first '*' will be used as prefix)
 	 */
-	async listCloudFiles(opts: ListCloudFilesOptions): Promise<GoogleFile[]> {
-		const { prefix, glob, delimiter } = opts;
+	async listCloudFiles(opts: ListCloudFilesOptions): Promise<ListCloudFilesResult> {
+		const { prefix, glob, directory, limit, marker } = opts;
 
 		// build the query options and perform the re	quest
-		let baseQuery: GetFilesOptions = { autoPaginate: true };
-		if (delimiter === true) {
+		let baseQuery: GetFilesOptions = { autoPaginate: false };
+		if (directory === true) {
 			baseQuery.delimiter = '/';
 		}
+
+		if (limit != null) {
+			baseQuery.maxResults = limit;
+		}
+		if (marker != null) {
+			baseQuery.pageToken = marker;
+		}
+
 		let getListOpts = (prefix) ? { ...baseQuery, prefix } : baseQuery;
-		const result = await this.googleBucket.getFiles(getListOpts);
-		let gfList = result[0] || [];
+		// Note: need to fix the google bucket getFiles return type ([1] can be any or null)
+		const [gfList, info, meta] = await this.googleBucket.getFiles(getListOpts) as [GoogleFile[], any | null, any];
 
+		// get the dirs
+		const dirs = (directory && meta.prefixes) ? meta.prefixes as string[] : undefined;
 
+		// get pageToken (nextMarker)
+		const nextMarker = info?.pageToken;
 		// if glob, filter the data further
 		let files: GoogleFile[] = (!glob) ? gfList : gfList.filter(gf => micromatch.isMatch(gf.name, glob));
 
-		return files;
+		return { files, dirs, nextMarker };
 	}
+
+
 
 	async downloadCloudFile(cf: GoogleFile, localPath: string): Promise<void> {
 		await cf.download({ destination: localPath });

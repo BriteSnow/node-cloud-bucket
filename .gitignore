@@ -19,10 +19,11 @@ test/test-out
 # Ignore the experiment test file
 xp.spec.ts
 
-cp
 
+# Ignore node build files
 node_modules/
 npm-debug.log
+report.*.json
 
 
 .vscode

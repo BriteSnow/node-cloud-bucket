@@ -1,7 +1,8 @@
 import { Credentials, S3 } from 'aws-sdk';
+import { ListObjectsRequest } from 'aws-sdk/clients/s3';
 import { createReadStream, createWriteStream } from 'fs-extra-plus';
 import { PassThrough, Readable, Writable } from "stream";
-import { Driver, ListCloudFilesOptions } from "./driver";
+import { Driver, ListCloudFilesOptions, ListCloudFilesResult } from "./driver";
 import { BucketFile, BucketType } from './types';
 
 import micromatch = require('micromatch');
@@ -91,17 +92,23 @@ class S3Driver implements Driver<AwsFile> {
 
 	}
 
-	async listCloudFiles(opts: ListCloudFilesOptions): Promise<AwsFile[]> {
+	async listCloudFiles(opts: ListCloudFilesOptions): Promise<ListCloudFilesResult<AwsFile>> {
 
-		const { prefix, glob, delimiter } = opts;
+		const { prefix, glob, directory, limit, marker } = opts;
 
 		// build the list params
-		let listParams: { Prefix?: string, Delimiter?: string } = {};
+		let listParams: Partial<ListObjectsRequest> = {};
 		if (prefix) {
 			listParams.Prefix = prefix;
 		}
-		if (delimiter) {
+		if (directory) {
 			listParams!.Delimiter = '/';
+		}
+		if (limit != null) {
+			listParams.MaxKeys = limit;
+		}
+		if (marker != null) {
+			listParams.Marker = marker;
 		}
 		const params = { ...this.baseParams, ...listParams };
 
@@ -109,11 +116,20 @@ class S3Driver implements Driver<AwsFile> {
 		try {
 			const awsResult = await this.s3.listObjects(params).promise();
 			const awsFiles = awsResult.Contents as AwsFile[];
-
 			// if glob, filter again the result
 			let files: AwsFile[] = (!glob) ? awsFiles : awsFiles.filter(af => micromatch.isMatch(af.Key!, glob));
 
-			return files;
+			let dirs: string[] | undefined = undefined;
+			if (directory && awsResult.CommonPrefixes) {
+				// Note: for now, match the gcp driver, undefined if empty
+				const prefixes = awsResult.CommonPrefixes?.map(cp => cp.Prefix!);
+				if (prefixes != null && prefixes.length > 0) {
+					dirs = prefixes;
+				}
+			}
+			const nextMarker = awsResult.NextMarker;
+
+			return { files, dirs, nextMarker };
 		} catch (ex) {
 			throw ex;
 		}

@@ -21,7 +21,7 @@ export interface Driver<F = any> {
 	 */
 	getCloudFile(path: String): Promise<F | null>;
 
-	listCloudFiles(opts: ListCloudFilesOptions): Promise<F[]>;
+	listCloudFiles(opts: ListCloudFilesOptions): Promise<ListCloudFilesResult>;
 
 	downloadCloudFile(cf: F, localPath: string): Promise<void>;
 
@@ -41,9 +41,19 @@ export interface Driver<F = any> {
 
 }
 
+export interface ListCloudFilesResult<F = any> {
+	files: F[];
+	dirs?: string[];
+	nextMarker?: string;
+}
+
+export interface BrowseCloudFilesOptions extends ListCloudFilesOptions { }
+
 /** Internal Interface to the list implementation */
 export interface ListCloudFilesOptions {
 	prefix?: string; // the prefix (only)
 	glob?: string; // the eventual glob
-	delimiter?: boolean; // if true, the '/' delimiter will be set (might allow to set specific char later)
+	directory?: boolean; // if true, the '/' delimiter will be set (might allow to set specific char later)
+	limit?: number;
+	marker?: string;
 }

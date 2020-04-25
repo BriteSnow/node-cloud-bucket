@@ -5,7 +5,7 @@ import { lookup } from 'mime-types';
 import * as Path from 'path';
 import { Readable, Writable } from 'stream';
 import { Driver, ListCloudFilesOptions } from './driver';
-import { BucketFile, BucketFileDeleted, BucketType, ListArg, ListOptions } from './types';
+import { BucketFile, BucketFileDeleted, BucketType, ListArg, ListOptions, ListResult } from './types';
 
 interface BucketOptions {
 	driver: Driver;
@@ -31,7 +31,9 @@ export interface Bucket {
 	 */
 	getFile(path: String): Promise<BucketFile | null>;
 
-	list(optsOrPrefix?: ListArg): Promise<BucketFile[]>;
+	list(optsOrPrefix?: ListArg): Promise<ListResult>;
+
+	listFiles(optsOrPrefix?: ListArg): Promise<BucketFile[]>;
 
 	/**
 	 * Will copy one or more file to a destination file (then require single match, i.e. no glob), 
@@ -117,11 +119,19 @@ class BucketImpl<F> implements Bucket {
 		return (cloudFile == null) ? null : this.toFile(cloudFile);
 	}
 
-	async list(optsOrPrefix?: ListArg): Promise<BucketFile[]> {
-		const cloudFiles = await this.driver.listCloudFiles(parseListOptions(optsOrPrefix));
-		const bucketFiles = cloudFiles.map(cf => this.toFile(cf));
-		return bucketFiles;
+	async listFiles(optsOrPrefix?: ListArg): Promise<BucketFile[]> {
+		return (await this.list(optsOrPrefix)).files;
 	}
+
+	async list(optsOrPrefix?: ListArg): Promise<ListResult> {
+		const cloudFilesOptions = parseListOptions(optsOrPrefix);
+		const cloudFilesResult = await this.driver.listCloudFiles(cloudFilesOptions);
+		const { dirs, nextMarker } = cloudFilesResult;
+		const files = cloudFilesResult.files.map(cf => this.toFile(cf));
+		return { files, dirs, nextMarker };
+	}
+
+
 
 	/**
 	 * Will copy one or more file to a destination file (then require single match, i.e. no glob), 
@@ -131,7 +141,7 @@ class BucketImpl<F> implements Bucket {
 	 */
 	async copy(prefixOrGlob: string, dest: string | BucketFile): Promise<void> {
 		// return this.driver.copy(prefixOrGlob, dest);
-		const cloudFiles = await this.driver.listCloudFiles(parseListOptions(prefixOrGlob));
+		const cloudFiles = (await this.driver.listCloudFiles(parseListOptions(prefixOrGlob))).files;
 
 		const destBucket = (typeof dest === 'string') ? this : dest.bucket;
 		const destPath = (typeof dest === 'string') ? dest : dest.path;
@@ -175,7 +185,7 @@ class BucketImpl<F> implements Bucket {
 	async download(prefixOrGlob: string, localPath: string): Promise<BucketFile[]> {
 		const isLocalPathDir = localPath.endsWith('/');
 
-		const cloudFiles = await this.driver.listCloudFiles(parseListOptions(prefixOrGlob));
+		const cloudFiles = (await this.driver.listCloudFiles(parseListOptions(prefixOrGlob))).files;
 
 		// If not a local directory, make sure we have only one file.
 		// TODO: might check if the pathOrGlob is a glob as well to prevent it (in case there is only one match)
@@ -345,8 +355,14 @@ export function getContentType(path: string) {
 
 
 export function parseListOptions(optsOrPrefix?: ListOptions | string): ListCloudFilesOptions {
-	const { prefix, glob } = (typeof optsOrPrefix === 'string') ? parsePrefixOrGlob(optsOrPrefix) : parsePrefixOrGlob(optsOrPrefix?.prefix);
-	return { prefix, glob, delimiter: (typeof optsOrPrefix !== 'string') ? optsOrPrefix?.delimiter : undefined }
+	if (optsOrPrefix == null) {
+		optsOrPrefix = ''; // for now, default
+	}
+	const opts = (typeof optsOrPrefix === 'string') ? { prefix: optsOrPrefix } : optsOrPrefix;
+
+	const { prefix, glob } = parsePrefixOrGlob(opts.prefix);
+	const { directory, limit, marker } = opts;
+	return { prefix, glob, directory, limit, marker };
 }
 /**
  * Return a clean prefix and glob when defined in the string. Clean prefix, meaning, glob less one, 
