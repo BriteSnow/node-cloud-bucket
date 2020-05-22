@@ -85,3 +85,8 @@ export function checkIsoDate(val?: string | null) {
 	}
 }
 //#endregion ---------- /Check Helpers ----------
+
+
+export function wait(ms: number) {
+	return new Promise((res, rej) => setTimeout(res, ms));
+}

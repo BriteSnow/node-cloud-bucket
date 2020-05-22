@@ -25,6 +25,26 @@ export async function getS3Driver(cfg: S3DriverCfg) {
 	return new S3Driver(s3, cfg.bucketName);
 }
 
+/** 
+ * Custom Writable to trigger finish/close event manually on upload 
+ * TODO: Needs to check if this create some side effect. 
+ */
+class S3UploadWriteStream extends PassThrough {
+	emit(event: any): boolean {
+		if (event !== 'finish' && event !== 'cl0se') {
+			super.emit(event);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	triggerFinishAndClose() {
+		super.emit('finish');
+		super.emit('close');
+	}
+}
+
 class S3Driver implements Driver<AwsFile> {
 	private s3: S3;
 	private baseParams: { Bucket: string };
@@ -199,12 +219,17 @@ class S3Driver implements Driver<AwsFile> {
 	}
 
 	async createWriteStream(path: string): Promise<Writable> {
-		var pass = new PassThrough();
+		const writable = new S3UploadWriteStream();
 
-		const params = { ...this.baseParams, ...{ Key: path }, Body: pass };
-		this.s3.upload(params);
+		const params = { ...this.baseParams, ...{ Key: path }, Body: writable };
+		const uploadCtrl = this.s3.upload(params);
 
-		return pass;
+		// NOTE: We use the S3UploadWriteStream trigger finish and close stream even when the upload is done
+		uploadCtrl.promise().then(() => {
+			writable.triggerFinishAndClose();
+		});
+
+		return writable;
 	}
 
 	async deleteCloudFile(path: string): Promise<boolean> {
