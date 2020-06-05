@@ -15,7 +15,7 @@
     "@google-cloud/storage": "^5.0.1",
     "@types/micromatch": "^4.0.1",
     "@types/mime-types": "^2.1.0",
-    "aws-sdk": "^2.682.0",
+    "aws-sdk": "^2.691.0",
     "fs-extra-plus": "^0.5.16",
     "micromatch": "^4.0.2",
     "mime-types": "^2.1.27"
@@ -23,10 +23,10 @@
   "devDependencies": {
     "@types/js-yaml": "^3.12.4",
     "@types/mocha": "^7.0.2",
-    "js-yaml": "^3.13.1",
-    "mocha": "^7.1.2",
-    "ts-node": "^8.10.1",
-    "typescript": "^3.9.3"
+    "js-yaml": "^3.14.0",
+    "mocha": "^7.2.0",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5"
   },
   "scripts": {
     "test": "TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts",

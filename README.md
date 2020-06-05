@@ -20,11 +20,19 @@ Simple cross cloud (for now GCP and AWS) bucket API.
 ```ts
 import {getBucket} from 'cloud-bucket';
 
-const bucketCfg = {
-  bucketName: '_BUCKET_NAME_'
-  access_key_id: "_AWS_ACCESS_KEY_ID_"
-  access_key_secret: "_AWS_ACCESS_KEY/_SECRET_"
+const bucketCfg = { // for aws S3
+  bucketName: '_BUCKET_NAME_',
+  access_key_id: "_AWS_ACCESS_KEY_ID_",
+  access_key_secret: "_AWS_ACCESS_KEY_SECRET_"
 };
+
+// for google
+// const bucketCfg = {
+//   bucketName: '_GOOGLE_BUCKET_NAME_',
+//   project_id: '_GOOGLE_PROJECT_ID_NAME_',
+//   client_email: '_GOOGLE_SERVICE_ACCOUNT_EMAIL_',
+//   private_key: '-----BEGIN PRIVATE KEY-----\n_GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_WITH_NEW_LINE_\n-----END PRIVATE KEY-----'
+// }
 
 const bucket = await getBucket(bucketCfg);
 
@@ -94,13 +102,3 @@ const deleted = await bucket.delete('some-file.txt');
 
 ```
 
-For Google Cloud Storage, just use (the `getBucket` API will auto-detect the type of cloud from the config object): 
-
-```ts
-const bucketCfg = {
-  bucketName: '_GOOGLE_BUCKET_NAME_',
-  project_id: '_GOOGLE_PROJECT_ID_NAME_',
-  client_email: '_GOOGLE_SERVICE_ACCOUNT_EMAIL_',
-  private_key: '-----BEGIN PRIVATE KEY-----\n_GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_WITH_NEW_LINE_\n-----END PRIVATE KEY-----'
-}
-```
