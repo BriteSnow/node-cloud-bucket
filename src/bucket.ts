@@ -7,8 +7,9 @@ import { Readable, Writable } from 'stream';
 import { Driver, ListCloudFilesOptions } from './driver';
 import { BucketFile, BucketFileDeleted, BucketType, ListArg, ListOptions, ListResult } from './types';
 
-interface BucketOptions {
+export interface BucketOptions {
 	driver: Driver;
+	log: boolean;
 }
 
 export function newBucket(opts: BucketOptions) {
@@ -75,8 +76,11 @@ export interface Bucket {
 
 class BucketImpl<F> implements Bucket {
 	driver: Driver<F>;
+	log: boolean;
+
 	constructor(opts: BucketOptions) {
-		this.driver = opts.driver
+		this.driver = opts.driver;
+		this.log = opts.log;
 	}
 
 	get type() {
@@ -161,14 +165,20 @@ class BucketImpl<F> implements Bucket {
 			const remotePath = this.driver.getPath(cf);
 			const destFilePath = (isDestPathDir) ? getDestPath(baseDir, remotePath, destPath) : destPath;
 
-			process.stdout.write(`Copying ${this.type}://${this.name}/${remotePath} to ${destBucket.type}://${destBucket.name}/${destFilePath}`);
+			if (this.log) {
+				process.stdout.write(`Copying ${this.type}://${this.name}/${remotePath} to ${destBucket.type}://${destBucket.name}/${destFilePath}`);
+			}
 
 			try {
 				await this.driver.copyCloudFile(cf, { bucket: destBucket, path: destFilePath });
-				process.stdout.write(` - DONE\n`);
+				if (this.log) {
+					process.stdout.write(` - DONE\n`);
+				}
 
 			} catch (ex) {
-				process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
+				if (this.log) {
+					process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
+				}
 				throw ex;
 			}
 		}
@@ -202,15 +212,21 @@ class BucketImpl<F> implements Bucket {
 
 			const localPathDir = Path.dirname(localFilePath);
 			await mkdirp(localPathDir);
-			process.stdout.write(`Downloading ${this.type}://${this.name}/${remotePath} to ${localFilePath}`);
+			if (this.log) {
+				process.stdout.write(`Downloading ${this.type}://${this.name}/${remotePath} to ${localFilePath}`);
+			}
 
 			try {
-				await this.driver.downloadCloudFile(cf, localFilePath)
-				process.stdout.write(` - DONE\n`);
+				await this.driver.downloadCloudFile(cf, localFilePath);
+				if (this.log) {
+					process.stdout.write(` - DONE\n`);
+				}
 				const file = { bucket: this, path: remotePath, size: -1, local: localFilePath };
 				files.push(file);
 			} catch (ex) {
-				process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
+				if (this.log) {
+					process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
+				}
 				throw ex;
 			}
 		}
@@ -238,14 +254,23 @@ class BucketImpl<F> implements Bucket {
 			// if we have an localFileExpression (globs), then, we build the fullDestPath relative to the baseDir of the glob (last / before the first *)
 			const fullDestPath = (isLocalGlob) ? getDestPath(baseDir, localPath, remotePath) : buildFullDestPath(localPath, remotePath);
 			const contentType = getContentType(localPath);
-			process.stdout.write(`Uploading file ${localPath} to ${this.type}://${this.name}/${fullDestPath}`);
+
+			if (this.log) {
+				process.stdout.write(`Uploading file ${localPath} to ${this.type}://${this.name}/${fullDestPath}`);
+			}
+
 			try {
 				const cloudFile = await this.driver.uploadCloudFile(localPath, fullDestPath, contentType);
 				const bucketFile = this.toFile(cloudFile);
 				bucketFiles.push(bucketFile);
-				process.stdout.write(` - DONE\n`);
+				if (this.log) {
+					process.stdout.write(` - DONE\n`);
+				}
 			} catch (ex) {
-				process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
+				if (this.log) {
+					process.stdout.write(` - FAIL - ABORT - Cause: ${ex}\n`);
+				}
+
 				throw ex;
 			}
 		}
@@ -277,9 +302,16 @@ class BucketImpl<F> implements Bucket {
 			throw new Error(`ERROR - Can't delete null or empty path`);
 		}
 		try {
-			process.stdout.write(`Deleting ${this.type}://${this.name}/${path}`);
+			if (this.log) {
+				process.stdout.write(`Deleting ${this.type}://${this.name}/${path}`);
+			}
+
 			deleted = await this.driver.deleteCloudFile(path);
-			process.stdout.write(` - DONE\n`);
+
+			if (this.log) {
+				process.stdout.write(` - DONE\n`);
+			}
+
 		} catch (ex) {
 			throw new Error(`ERROR - cloud-bucket - Cannot delete ${path} for bucket ${this.name}. Cause: ${ex}`);
 		}

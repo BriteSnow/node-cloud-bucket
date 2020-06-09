@@ -1,4 +1,4 @@
-import { Bucket, newBucket } from './bucket';
+import { Bucket, BucketOptions, newBucket } from './bucket';
 import { Driver } from './driver';
 import { getS3Driver, S3DriverCfg } from './driver-aws';
 import { getGsDriver, GsDriverCfg } from './driver-gcp';
@@ -8,26 +8,38 @@ export { signUrl, SignUrlOptions, urlSigner } from './url-signer';
 export { Bucket, BucketFile, ListOptions, ListResult };
 
 
+type GegBucketOptions = Partial<BucketOptions> & (GsDriverCfg | S3DriverCfg);
 
-export async function getBucket(rawCfg: any): Promise<Bucket> {
 
+export async function getBucket(options: GegBucketOptions): Promise<Bucket> {
+	const log = options.log ?? false; // by default, false. 
 	// if has .project_id, assume GcpBucket
-	const driver = await getDriver(rawCfg);
-	const bucket = newBucket({ driver });
+	const driver = await getDriver(options);
+	const bucket = newBucket({ driver, log });
 	return bucket;
 
 }
 
 
-async function getDriver(rawCfg: any): Promise<Driver> {
-	if (rawCfg.project_id) {
-		return getGsDriver(rawCfg as GsDriverCfg);
-	} else if (rawCfg.access_key_id) {
-		return getS3Driver(rawCfg as S3DriverCfg);
+async function getDriver(driverCfg: GsDriverCfg | S3DriverCfg): Promise<Driver> {
+	if (isGsDriverCfg(driverCfg)) {
+		return getGsDriver(driverCfg);
+	} else if (isS3DriverCfg(driverCfg)) {
+		return getS3Driver(driverCfg);
 	}
 	else {
 		throw new Error(`bucket config does not seem to be valid (only support Gcp and Aws for now)`);
 
 	}
+}
+
+
+function isGsDriverCfg(opts: any): opts is GsDriverCfg {
+	return opts.hasOwnProperty('project_id');
+}
+
+
+function isS3DriverCfg(opts: any): opts is S3DriverCfg {
+	return opts.hasOwnProperty('access_key_id');
 }
 
