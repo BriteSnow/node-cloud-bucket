@@ -191,9 +191,9 @@ class GcpDriver implements Driver<GoogleFile> {
 		return googleFile.createReadStream();
 	}
 
-	async createWriteStream(path: string): Promise<Writable> {
+	async createWriteStream(path: string, contentType?: string): Promise<Writable> {
 		const googleFile = this.googleBucket.file(path);
-		return googleFile.createWriteStream();
+		return googleFile.createWriteStream({ contentType });
 	}
 
 

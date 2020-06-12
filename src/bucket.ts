@@ -289,7 +289,8 @@ class BucketImpl<F> implements Bucket {
 	}
 
 	createWriteStream(path: string): Promise<Writable> {
-		return this.driver.createWriteStream(path);
+		const contentType = getContentType(path);
+		return this.driver.createWriteStream(path, contentType);
 	}
 
 	/**

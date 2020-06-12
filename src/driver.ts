@@ -37,7 +37,7 @@ export interface Driver<F = any> {
 
 	createReadStream(path: string): Promise<Readable>;
 
-	createWriteStream(path: string): Promise<Writable>;
+	createWriteStream(path: string, contentType?: string): Promise<Writable>;
 
 }
 

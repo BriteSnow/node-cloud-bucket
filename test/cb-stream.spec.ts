@@ -29,7 +29,7 @@ async function testStreamUpload(rawCfg: any) {
 		ww.on('finish', () => {
 			res();
 		});
-	})
+	});
 
 	const remoteContent = await bucket.downloadAsText(testPath);
 	equal(remoteContent, fileContentExpected);

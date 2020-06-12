@@ -31,7 +31,7 @@ export async function getS3Driver(cfg: S3DriverCfg) {
  */
 class S3UploadWriteStream extends PassThrough {
 	emit(event: any): boolean {
-		if (event !== 'finish' && event !== 'cl0se') {
+		if (event !== 'finish' && event !== 'close') {
 			super.emit(event);
 			return true;
 		} else {
@@ -218,10 +218,10 @@ class S3Driver implements Driver<AwsFile> {
 		return obj.createReadStream();
 	}
 
-	async createWriteStream(path: string): Promise<Writable> {
+	async createWriteStream(path: string, contentType?: string): Promise<Writable> {
 		const writable = new S3UploadWriteStream();
 
-		const params = { ...this.baseParams, ...{ Key: path }, Body: writable };
+		const params = { ...this.baseParams, ...{ Key: path, ContentType: contentType }, Body: writable };
 		const uploadCtrl = this.s3.upload(params);
 
 		// NOTE: We use the S3UploadWriteStream trigger finish and close stream even when the upload is done
