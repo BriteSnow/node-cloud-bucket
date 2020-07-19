@@ -21,10 +21,10 @@ export async function getBucket(options: GegBucketOptions): Promise<Bucket> {
 async function getDriver(driverCfg: GsDriverCfg | S3DriverCfg | MinioDriverCfg): Promise<Driver> {
 	if (isGsDriverCfg(driverCfg)) {
 		return getGsDriver(driverCfg);
+	} else if (isMinioDriverCfg(driverCfg)) { // IMPORTANT MUST be before S3Driver, because same access_key... 
+		return getMinioDriver(driverCfg);
 	} else if (isS3DriverCfg(driverCfg)) {
 		return getS3Driver(driverCfg);
-	} else if (isMinioDriverCfg(driverCfg)) {
-		return getMinioDriver(driverCfg);
 	} else {
 		throw new Error(`bucket config does not seem to be valid (only support Gcp and Aws for now)`);
 	}
@@ -39,6 +39,6 @@ function isS3DriverCfg(opts: any): opts is S3DriverCfg {
 }
 
 function isMinioDriverCfg(opts: any): opts is MinioDriverCfg {
-	return opts.hasOwnProperty('minio_access_key_id');
+	return opts.hasOwnProperty('minio_endpoint') && opts.minio_endpoint != null;
 }
 

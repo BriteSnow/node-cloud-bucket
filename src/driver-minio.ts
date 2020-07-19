@@ -1,18 +1,16 @@
 import { S3 } from 'aws-sdk';
-import { S3Driver } from './driver-aws';
+import { S3Driver, S3DriverCfg } from './driver-aws';
+import { BucketType } from './types';
 
-export interface MinioDriverCfg {
-	bucketName: string;
+export interface MinioDriverCfg extends S3DriverCfg {
 	minio_endpoint: string;
-	minio_access_key_id: string;
-	minio_access_key_secret: string;
 }
 
 export async function getMinioDriver(cfg: MinioDriverCfg) {
 	// const credentials = new Credentials(cfg.access_key_id, cfg.access_key_secret);
 	const s3 = new S3({
-		accessKeyId: cfg.minio_access_key_id,
-		secretAccessKey: cfg.minio_access_key_secret,
+		accessKeyId: cfg.access_key_id,
+		secretAccessKey: cfg.access_key_secret,
 		endpoint: cfg.minio_endpoint,
 		s3ForcePathStyle: true, // needed with minio (otherwise bucket.locahost and get address not found)
 		signatureVersion: 'v4'
@@ -28,7 +26,9 @@ export async function getMinioDriver(cfg: MinioDriverCfg) {
 }
 
 class MinioDriver extends S3Driver {
-
+	get type(): BucketType {
+		return 'minio'
+	}
 }
 
 

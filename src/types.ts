@@ -5,7 +5,7 @@ import type { Bucket } from './bucket';
 // Those are the common types to avoid uncessary cyclic module reference. (best practice)
 ////
 
-export type BucketType = 's3' | 'gs';
+export type BucketType = 's3' | 'gs' | 'minio';
 
 export interface BucketFile {
 	bucket: Bucket;
