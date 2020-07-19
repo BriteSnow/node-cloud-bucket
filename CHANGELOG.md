@@ -1,8 +1,10 @@
-> Note: Minor update dependencies only are not recorded here (but still tagged)
+> Legend: `!` change; `+` enhancement; `-` fix; `.` minor
+
+> Note: Minor updates with dependency only update are not recorded here (but still tagged)
 
 ### [v0.3.4](https://github.com/BriteSnow/node-cloud-bucket/compare/v0.3.3...v0.3.4) July 19, 2020
 
-- `+` minio - Added support for minio (for dev/mock only for now).
+- `+` minio - Added support for minio (for dev/mock only for now)
 
 ### [v0.3.3](https://github.com/BriteSnow/node-cloud-bucket/compare/v0.3.2...v0.3.3) June 12, 2020
 
