@@ -13,7 +13,7 @@ const remoteFile04 = 'test-dir/sub-dir/test-file-sub-03.txt';
 describe('cb-basic', function () {
 
 	generateTests.call(this, {
-		'cb-basic-getFile': testGetFile,
+		'cb-basic-getFile-default': testGetFile,
 		'cb-basic-getFile-null': testGetFileNull,
 		'cb-basic-exists': testExists,
 		'cb-basic-updated': testUpdated,

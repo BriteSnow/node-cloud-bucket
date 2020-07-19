@@ -22,7 +22,6 @@ async function testStreamUpload(rawCfg: any) {
 
 	const readS = createReadStream(TEST_FILE_LOCALPATH_01);
 	const writeS = await bucket.createWriteStream(testPath);
-
 	const ww = readS.pipe(writeS);
 
 	await new Promise((res, rej) => {

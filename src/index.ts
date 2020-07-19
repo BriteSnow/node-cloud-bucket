@@ -2,14 +2,13 @@ import { Bucket, BucketOptions, newBucket } from './bucket';
 import { Driver } from './driver';
 import { getS3Driver, S3DriverCfg } from './driver-aws';
 import { getGsDriver, GsDriverCfg } from './driver-gcp';
+import { getMinioDriver, MinioDriverCfg } from './driver-minio';
 import { BucketFile, ListOptions, ListResult } from './types';
 
 export { signUrl, SignUrlOptions, urlSigner } from './url-signer';
 export { Bucket, BucketFile, ListOptions, ListResult };
 
-
-type GegBucketOptions = Partial<BucketOptions> & (GsDriverCfg | S3DriverCfg);
-
+type GegBucketOptions = Partial<BucketOptions> & (GsDriverCfg | S3DriverCfg | MinioDriverCfg);
 
 export async function getBucket(options: GegBucketOptions): Promise<Bucket> {
 	const log = options.log ?? false; // by default, false. 
@@ -17,29 +16,29 @@ export async function getBucket(options: GegBucketOptions): Promise<Bucket> {
 	const driver = await getDriver(options);
 	const bucket = newBucket({ driver, log });
 	return bucket;
-
 }
 
-
-async function getDriver(driverCfg: GsDriverCfg | S3DriverCfg): Promise<Driver> {
+async function getDriver(driverCfg: GsDriverCfg | S3DriverCfg | MinioDriverCfg): Promise<Driver> {
 	if (isGsDriverCfg(driverCfg)) {
 		return getGsDriver(driverCfg);
 	} else if (isS3DriverCfg(driverCfg)) {
 		return getS3Driver(driverCfg);
-	}
-	else {
+	} else if (isMinioDriverCfg(driverCfg)) {
+		return getMinioDriver(driverCfg);
+	} else {
 		throw new Error(`bucket config does not seem to be valid (only support Gcp and Aws for now)`);
-
 	}
 }
-
 
 function isGsDriverCfg(opts: any): opts is GsDriverCfg {
 	return opts.hasOwnProperty('project_id');
 }
 
-
 function isS3DriverCfg(opts: any): opts is S3DriverCfg {
 	return opts.hasOwnProperty('access_key_id');
+}
+
+function isMinioDriverCfg(opts: any): opts is MinioDriverCfg {
+	return opts.hasOwnProperty('minio_access_key_id');
 }
 

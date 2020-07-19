@@ -45,7 +45,7 @@ class S3UploadWriteStream extends PassThrough {
 	}
 }
 
-class S3Driver implements Driver<AwsFile> {
+export class S3Driver implements Driver<AwsFile> {
 	private s3: S3;
 	private baseParams: { Bucket: string };
 
@@ -189,7 +189,8 @@ class S3Driver implements Driver<AwsFile> {
 	}
 
 	async uploadCloudFile(localPath: string, remoteFilePath: string, contentType?: string): Promise<AwsFile> {
-		const readable = createReadStream(localPath)
+		const readable = createReadStream(localPath);
+		console.log('->> uploadCloudFile',);
 		const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: remoteFilePath, Body: readable, ContentType: contentType } }).promise();
 		// TODO: probably check the awsResult that match remoteFilePath
 		return { Key: remoteFilePath };
@@ -247,12 +248,6 @@ class S3Driver implements Driver<AwsFile> {
 		}
 
 	}
-	//#region    ---------- Private ---------- 
-
-
-
-
-	//#endregion ---------- /Private ---------- 
 }
 
 

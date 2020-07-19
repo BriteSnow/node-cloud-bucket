@@ -1,17 +1,22 @@
 import * as crypto from 'crypto';
 
-export interface SignUrlOptions {
+type CloudSignUrlOptions = {
 	type: 's3' | 'gs',
 	expires: number,
 	keyName: string,
 	key: string,
 }
 
+export type SignUrlOptions = CloudSignUrlOptions | { type: 'minio' };
+
+
 export function signUrl(url: string, opts: SignUrlOptions) {
 	if (opts.type === 's3') {
 		return s3_sign_url(url, opts);
 	} else if (opts.type === 'gs') {
 		return gs_sign_url(url, opts);
+	} else if (opts.type === 'minio') {
+		return url; // for now passthrough (minio is assumed to be for dev)
 	} else {
 		throw new Error(`cdnSign does not support type ${opts.type} for now`);
 	}
@@ -35,6 +40,11 @@ export function urlSigner(baseUrl: string, opts: SignUrlOptions): (pathFromBaseU
 		return s3_urlSigner(baseUrl, opts);
 	} if (opts.type === 'gs') {
 		return gs_urlSigner(baseUrl, opts);
+	} if (opts.type === 'minio') {
+		// for now, assume no signature on (minio is assumed to be for dev)
+		return function (pathFromBaseUrl) {
+			return baseUrl + pathFromBaseUrl;
+		}
 	} else {
 		throw new Error('urlSigner only supported for s3');
 	}
@@ -42,7 +52,7 @@ export function urlSigner(baseUrl: string, opts: SignUrlOptions): (pathFromBaseU
 
 
 //#region    ---------- S3 Signer ---------- 
-function s3_urlSigner(baseUrl: string, opts: SignUrlOptions): (pathFromBaseUrl: string) => string {
+function s3_urlSigner(baseUrl: string, opts: CloudSignUrlOptions): (pathFromBaseUrl: string) => string {
 
 	const isWildPolicy = baseUrl.endsWith('*');
 
@@ -70,7 +80,7 @@ function s3_urlSigner(baseUrl: string, opts: SignUrlOptions): (pathFromBaseUrl: 
 	}
 }
 
-function s3_sign_url(url: string, opts: SignUrlOptions) {
+function s3_sign_url(url: string, opts: CloudSignUrlOptions) {
 
 	const [policyStringified, policyB64Norm] = s3_makePolicy(url, opts.expires);
 	const signature = s3_sign(policyStringified, opts.key);
@@ -112,7 +122,7 @@ function s3_normalize_b64(val: string) {
 
 const GCP_BASE64_REPLACE = { '+': '-', '/': '_', '=': '' };
 
-function gs_urlSigner(baseUrl: string, opts: SignUrlOptions): (pathFromBaseUrl: string) => string {
+function gs_urlSigner(baseUrl: string, opts: CloudSignUrlOptions): (pathFromBaseUrl: string) => string {
 	// just for API symetry, as gcp does not support wild policy signature
 	const isWildPolicy = baseUrl.endsWith('*');
 
@@ -131,7 +141,7 @@ function gs_urlSigner(baseUrl: string, opts: SignUrlOptions): (pathFromBaseUrl: 
 }
 
 
-function gs_sign_url(url: string, opts: SignUrlOptions) {
+function gs_sign_url(url: string, opts: CloudSignUrlOptions) {
 	// URL to sign
 	const urlToSign = `${url}?Expires=${opts.expires}&KeyName=${opts.keyName}`;
 

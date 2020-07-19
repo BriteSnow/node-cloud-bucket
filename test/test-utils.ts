@@ -68,6 +68,11 @@ export function generateTests(tests: { [name: string]: TestFn }) {
 			const cfg = await loadBucketCfg('testAws');
 			await tests[name].call(this, cfg);
 		});
+		it(`${name}-minio`, async function () {
+			this.timeout(15000);
+			const cfg = await loadBucketCfg('testMinio');
+			await tests[name].call(this, cfg);
+		});
 	}
 }
 //#endregion ---------- /Suite Generators ---------- 

@@ -18,10 +18,12 @@
     "aws-sdk": "^2.715.0",
     "fs-extra-plus": "^0.5.18",
     "micromatch": "^4.0.2",
-    "mime-types": "^2.1.27"
+    "mime-types": "^2.1.27",
+    "minio": "^7.0.16"
   },
   "devDependencies": {
     "@types/js-yaml": "^3.12.5",
+    "@types/minio": "^7.0.6",
     "@types/mocha": "^8.0.0",
     "js-yaml": "^3.14.0",
     "mocha": "^8.0.1",
@@ -29,9 +31,9 @@
     "typescript": "^3.9.7"
   },
   "scripts": {
-    "test": "TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts",
-    "testw": "TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts --watch --watch-files './test/**/*.ts','./src/**/*.ts'",
-    "testd": "TS_NODE_FILES=true ./node_modules/.bin/mocha --inspect-brk ./test/*.spec.ts",
+    "test": "TS_NODE_FILES=true ./node_modules/.bin/mocha",
+    "testw": "TS_NODE_FILES=true ./node_modules/.bin/mocha --watch",
+    "testd": "TS_NODE_FILES=true ./node_modules/.bin/mocha --inspect-brk",
     "prepare": "rm -Rf dist/ && ./node_modules/.bin/tsc"
   },
   "license": "MIT",

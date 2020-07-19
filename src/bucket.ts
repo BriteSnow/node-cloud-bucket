@@ -240,7 +240,7 @@ class BucketImpl<F> implements Bucket {
 
 	async upload(localPath: string, remotePath: string): Promise<BucketFile[]> {
 		const bucketFiles: BucketFile[] = [];
-
+		console.log('->> upload', localPath);
 		if (localPath.endsWith('/')) {
 			localPath = localPath + '**/*.*';
 		}
