@@ -1,6 +1,6 @@
 {
   "name": "cloud-bucket",
-  "version": "0.3.3",
+  "version": "0.3.4-SNAPSHOT",
   "description": "Simple multi cloud (Google Storage and AWS S3) bucket API",
   "author": "Jeremy Chone <jeremy.chone@gmail.com>",
   "main": "dist/index.js",
@@ -12,21 +12,21 @@
     "node": ">=12"
   },
   "dependencies": {
-    "@google-cloud/storage": "^5.1.0",
+    "@google-cloud/storage": "^5.1.2",
     "@types/micromatch": "^4.0.1",
     "@types/mime-types": "^2.1.0",
-    "aws-sdk": "^2.696.0",
-    "fs-extra-plus": "^0.5.17",
+    "aws-sdk": "^2.715.0",
+    "fs-extra-plus": "^0.5.18",
     "micromatch": "^4.0.2",
     "mime-types": "^2.1.27"
   },
   "devDependencies": {
-    "@types/js-yaml": "^3.12.4",
-    "@types/mocha": "^7.0.2",
+    "@types/js-yaml": "^3.12.5",
+    "@types/mocha": "^8.0.0",
     "js-yaml": "^3.14.0",
     "mocha": "^8.0.1",
     "ts-node": "^8.10.2",
-    "typescript": "^3.9.5"
+    "typescript": "^3.9.7"
   },
   "scripts": {
     "test": "TS_NODE_FILES=true ./node_modules/.bin/mocha ./test/*.spec.ts",
