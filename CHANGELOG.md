@@ -2,7 +2,7 @@
 
 > Note: Minor updates with dependency only update are not recorded here (but still tagged)
 
-### [v0.3.4](https://github.com/BriteSnow/node-cloud-bucket/compare/v0.3.3...v0.3.4) July 19, 2020
+### [v0.3.5](https://github.com/BriteSnow/node-cloud-bucket/compare/v0.3.3...v0.3.5) July 19, 2020
 
 - `+` minio - Added support for minio (for dev/mock only for now)
 

@@ -58,16 +58,16 @@ type TestFn = (rawCfg: any) => Promise<void>;
 export function generateTests(tests: { [name: string]: TestFn }) {
 
 	for (const name of Object.keys(tests)) {
-		// it(`${name}-gcp`, async function () {
-		// 	this.timeout(15000);
-		// 	const cfg = await loadBucketCfg('testGcp');
-		// 	await tests[name].call(this, cfg);
-		// });
-		// it(`${name}-aws`, async function () {
-		// 	this.timeout(15000);
-		// 	const cfg = await loadBucketCfg('testAws');
-		// 	await tests[name].call(this, cfg);
-		// });
+		it(`${name}-gcp`, async function () {
+			this.timeout(15000);
+			const cfg = await loadBucketCfg('testGcp');
+			await tests[name].call(this, cfg);
+		});
+		it(`${name}-aws`, async function () {
+			this.timeout(15000);
+			const cfg = await loadBucketCfg('testAws');
+			await tests[name].call(this, cfg);
+		});
 		it(`${name}-minio`, async function () {
 			this.timeout(15000);
 			const cfg = await loadBucketCfg('testMinio');

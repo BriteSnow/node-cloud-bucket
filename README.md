@@ -20,33 +20,21 @@ Simple cross cloud (for now GCP and AWS) bucket API.
 ```ts
 import {getBucket} from 'cloud-bucket';
 
-// For AWS S3
-const bucketCfg = { // for aws S3
+// For AWS S3 (or minio)
+const bucketCfg = { 
   bucketName: '_BUCKET_NAME_',
   access_key_id: "_AWS_ACCESS_KEY_ID_",
-  access_key_secret: "_AWS_ACCESS_KEY_SECRET_"
+  access_key_secret: "_AWS_ACCESS_KEY_SECRET_",
+  minio_endpoint: "http://localhost:9000" // for minio (for mock s3)
 };
 
-// for google
+// for google bucket
 const bucketCfg = {
-  bucketName: '_GOOGLE_BUCKET_NAME_',
+  bucketName: '_BUCKET_NAME_',
   project_id: '_GOOGLE_PROJECT_ID_NAME_',
   client_email: '_GOOGLE_SERVICE_ACCOUNT_EMAIL_',
   private_key: '-----BEGIN PRIVATE KEY-----\n_GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_WITH_NEW_LINE_\n-----END PRIVATE KEY-----'
 }
-
-// For Minio (for dev only)
-// e.g. run local minio docker
-// docker run --rm -p 9000:9000 \
-//   -e "MINIO_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE" \
-//   -e "MINIO_SECRET_KEY=wJalrXUtnFEMIKK7MDENGKKPxRfiCYEXAMPLEKEY" \
-//   minio/minio server /data
-const bucketCfg = { // for aws S3
-  bucketName: '_BUCKET_NAME_',
-  minio_access_key_id: "_AWS_ACCESS_KEY_ID_",
-  minio_access_key_secret: "_AWS_ACCESS_KEY_SECRET_",
-  minio_endpoint: "http://localhost:9000"
-};
 
 
 const bucket = await getBucket(bucketCfg);

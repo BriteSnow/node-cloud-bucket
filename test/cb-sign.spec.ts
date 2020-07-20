@@ -19,6 +19,10 @@ async function testSignBasic(rawCfg: any) {
 	// const bucket = await cleanAll(rawCfg);
 	const bucket = await getBucket(rawCfg);
 
+	if (bucket.type === 'minio') {
+		return; // skip minio sign url for now
+	}
+
 	const testSign = test_signs[bucket.type];
 
 	const url = testSign.urls[0]; // for not test, only one url
@@ -44,6 +48,10 @@ async function testSignBasic(rawCfg: any) {
 
 async function testSigner(rawCfg: any) {
 	const bucket = await getBucket(rawCfg);
+	if (bucket.type === 'minio') {
+		return; // skip minio sign url for now
+	}
+
 	const test_signs: any = (await loadYaml('./test-data/.test-buckets.yaml')).test_signs;
 	const testSign = test_signs[bucket.type];
 
