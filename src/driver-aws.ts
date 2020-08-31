@@ -190,7 +190,6 @@ export class S3Driver implements Driver<AwsFile> {
 
 	async uploadCloudFile(localPath: string, remoteFilePath: string, contentType?: string): Promise<AwsFile> {
 		const readable = createReadStream(localPath);
-		console.log('->> uploadCloudFile',);
 		const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: remoteFilePath, Body: readable, ContentType: contentType } }).promise();
 		// TODO: probably check the awsResult that match remoteFilePath
 		return { Key: remoteFilePath };
