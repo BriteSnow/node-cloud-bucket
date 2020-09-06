@@ -1,4 +1,4 @@
-import { Bucket, BucketOptions, newBucket } from './bucket';
+import { Bucket, newBucket } from './bucket';
 import { Driver } from './driver';
 import { getS3Driver, S3DriverCfg } from './driver-aws';
 import { getGsDriver, GsDriverCfg } from './driver-gcp';
@@ -8,9 +8,12 @@ import { BucketFile, ListOptions, ListResult } from './types';
 export { signUrl, SignUrlOptions, urlSigner } from './url-signer';
 export { Bucket, BucketFile, ListOptions, ListResult };
 
-type GegBucketOptions = Partial<BucketOptions> & (GsDriverCfg | S3DriverCfg | MinioDriverCfg);
+type GetBucketOptions = { log?: boolean } & (GsDriverCfg | S3DriverCfg | MinioDriverCfg);
 
-export async function getBucket(options: GegBucketOptions): Promise<Bucket> {
+export async function getBucket(options: GetBucketOptions): Promise<Bucket> {
+	if (options == null) {
+		throw new Error(`ERROR - cloud-bucket - Cannot getBucket with options ${options}`);
+	}
 	const log = options.log ?? false; // by default, false. 
 	// if has .project_id, assume GcpBucket
 	const driver = await getDriver(options);
