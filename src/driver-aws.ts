@@ -175,7 +175,7 @@ export class S3Driver implements Driver<AwsFile> {
 		const params = { ...this.baseParams, ...{ Key: remotePath } };
 		const remoteReadStream = this.s3.getObject(params).createReadStream();
 		const localWriteStream = createWriteStream(localPath);
-		const writePromise = new Promise((resolve, reject) => {
+		const writePromise = new Promise<void>((resolve, reject) => {
 			localWriteStream.once('close', () => {
 				resolve();
 			});
