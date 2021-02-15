@@ -19,7 +19,7 @@ export async function yaml(content: string) {
 
 export async function loadYaml(path: string) {
 	const yamlContent = await fs.readFile(path, 'utf8');
-	return yaml(yamlContent);
+	return yaml(yamlContent) as any;
 }
 //#endregion ---------- /Data Loaders ---------- 
 
