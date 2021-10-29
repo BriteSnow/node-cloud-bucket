@@ -1,5 +1,5 @@
 import { Credentials, S3 } from 'aws-sdk';
-import { ListObjectsRequest } from 'aws-sdk/clients/s3';
+import { ListObjectsV2Request } from 'aws-sdk/clients/s3';
 import { createReadStream, createWriteStream } from 'fs-extra-plus';
 import { PassThrough, Readable, Writable } from "stream";
 import { Driver, ListCloudFilesOptions, ListCloudFilesResult } from "./driver";
@@ -117,7 +117,7 @@ export class S3Driver implements Driver<AwsFile> {
 		const { prefix, glob, directory, limit, marker } = opts;
 
 		// build the list params
-		let listParams: Partial<ListObjectsRequest> = {};
+		let listParams: Partial<ListObjectsV2Request> = {};
 		if (prefix) {
 			listParams.Prefix = prefix;
 		}
@@ -128,13 +128,13 @@ export class S3Driver implements Driver<AwsFile> {
 			listParams.MaxKeys = limit;
 		}
 		if (marker != null) {
-			listParams.Marker = marker;
+			listParams.ContinuationToken = marker;
 		}
 		const params = { ...this.baseParams, ...listParams };
 
 		// perform the s3 list request
 		try {
-			const awsResult = await this.s3.listObjects(params).promise();
+			const awsResult = await this.s3.listObjectsV2(params).promise();
 			const awsFiles = awsResult.Contents as AwsFile[];
 			// if glob, filter again the result
 			let files: AwsFile[] = (!glob) ? awsFiles : awsFiles.filter(af => micromatch.isMatch(af.Key!, glob));
@@ -147,7 +147,7 @@ export class S3Driver implements Driver<AwsFile> {
 					dirs = prefixes;
 				}
 			}
-			const nextMarker = awsResult.NextMarker;
+			const nextMarker = awsResult.NextContinuationToken;
 
 			return { files, dirs, nextMarker };
 		} catch (ex) {
