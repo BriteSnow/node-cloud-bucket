@@ -68,7 +68,7 @@ class GcpDriver implements Driver<GoogleFile> {
 		const googleFile = this.googleBucket.file(path);
 		try {
 			return (await googleFile.get())[0];
-		} catch (ex) {
+		} catch (ex: any) {
 			// not found return null, as per getFile design.
 			if (ex.code === 404) {
 				return null;
@@ -143,7 +143,7 @@ class GcpDriver implements Driver<GoogleFile> {
 		if (googleFile) {
 			try {
 				await googleFile.delete();
-			} catch (ex) {
+			} catch (ex: any) {
 				// if not found, just return false.
 				if (ex.code === 404) {
 					process.stdout.write(` - Skipped (object not found)\n`);

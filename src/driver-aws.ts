@@ -99,7 +99,7 @@ export class S3Driver implements Driver<AwsFile> {
 
 			const awsFile: AwsFile = { Key, Size, LastModified, ETag, ContentType };
 			return awsFile;
-		} catch (ex) {
+		} catch (ex: any) {
 			//  if NotFound, return false
 			if (ex.code === 'NotFound') {
 				return null;
