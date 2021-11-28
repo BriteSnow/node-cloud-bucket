@@ -4,8 +4,8 @@ import { glob, mkdirp } from 'fs-extra-plus';
 import { lookup } from 'mime-types';
 import * as Path from 'path';
 import { Readable, Writable } from 'stream';
-import { Driver, ListCloudFilesOptions } from './driver';
-import { BucketFile, BucketFileDeleted, BucketType, ListArg, ListOptions, ListResult } from './types';
+import { Driver, ListCloudFilesOptions } from './driver.js';
+import { BucketFile, BucketFileDeleted, BucketType, ListArg, ListOptions, ListResult } from './types.js';
 
 export interface BucketOptions {
 	driver: Driver;

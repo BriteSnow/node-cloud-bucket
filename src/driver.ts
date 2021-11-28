@@ -1,5 +1,5 @@
 import { Readable, Writable } from 'stream';
-import { BucketFile, BucketType } from './types';
+import { BucketFile, BucketType } from './types.js';
 
 
 

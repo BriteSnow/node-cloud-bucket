@@ -1,7 +1,7 @@
 import { deepStrictEqual as equal } from 'assert';
-import { createReadStream, readFile } from 'fs-extra-plus';
-import { getBucket } from '../src';
-import { generateTests, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01 } from './test-utils';
+import { getBucket } from '../src/index.js';
+import { generateTests, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01 } from './test-utils.js';
+const { readFile, createReadStream } = (await import('fs-extra')).default;
 
 
 describe('cb-stream', function () {

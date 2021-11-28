@@ -1,16 +1,16 @@
-import { Credentials, S3 } from 'aws-sdk';
+import type { S3 as S3_TYPE } from 'aws-sdk';
 import { ListObjectsV2Request } from 'aws-sdk/clients/s3';
-import { createReadStream, createWriteStream } from 'fs-extra-plus';
 import { PassThrough, Readable, Writable } from "stream";
 import { Driver, ListCloudFilesOptions, ListCloudFilesResult } from "./driver";
 import { BucketFile, BucketType } from './types';
-
-import micromatch = require('micromatch');
+const micromatch = (await import('micromatch')).default;
+const { createReadStream, createWriteStream } = (await import('fs-extra')).default;
+const { Credentials, S3 } = (await import('aws-sdk')).default;
 
 // import {Object as AwsFile} from 'aws-sdk';
 
 // type S3 = AWS.S3;
-type AwsFile = S3.Object & { ContentType?: string };
+type AwsFile = S3_TYPE.Object & { ContentType?: string };
 
 export interface S3DriverCfg {
 	bucketName: string;
@@ -46,7 +46,7 @@ class S3UploadWriteStream extends PassThrough {
 }
 
 export class S3Driver implements Driver<AwsFile> {
-	private s3: S3;
+	private s3: S3_TYPE;
 	private baseParams: { Bucket: string };
 
 	get type(): BucketType {
@@ -57,7 +57,7 @@ export class S3Driver implements Driver<AwsFile> {
 		return this.baseParams.Bucket;
 	}
 
-	constructor(s3: S3, bucketName: string) {
+	constructor(s3: S3_TYPE, bucketName: string) {
 		this.s3 = s3;
 		this.baseParams = { Bucket: bucketName };
 	}

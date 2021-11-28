@@ -1,11 +1,11 @@
-import { Bucket, newBucket } from './bucket';
-import { Driver } from './driver';
-import { getS3Driver, S3DriverCfg } from './driver-aws';
-import { getGsDriver, GsDriverCfg } from './driver-gcp';
-import { getMinioDriver, MinioDriverCfg } from './driver-minio';
-import { BucketFile, ListOptions, ListResult } from './types';
+import { Bucket, newBucket } from './bucket.js';
+import { getS3Driver, S3DriverCfg } from './driver-aws.js';
+import { getGsDriver, GsDriverCfg } from './driver-gcp.js';
+import { getMinioDriver, MinioDriverCfg } from './driver-minio.js';
+import { Driver } from './driver.js';
+import { BucketFile, ListOptions, ListResult } from './types.js';
 
-export { signUrl, SignUrlOptions, urlSigner } from './url-signer';
+export { signUrl, SignUrlOptions, urlSigner } from './url-signer.js';
 export { Bucket, BucketFile, ListOptions, ListResult };
 
 type GetBucketOptions = { log?: boolean } & (GsDriverCfg | S3DriverCfg | MinioDriverCfg);

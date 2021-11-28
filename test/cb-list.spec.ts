@@ -1,5 +1,5 @@
 import { deepStrictEqual as equal } from 'assert';
-import { cleanAll, generateTests, TEST_DIR } from './test-utils';
+import { cleanAll, generateTests, TEST_DIR } from './test-utils.js';
 
 
 const remoteFile01 = 'test-file-01.txt';

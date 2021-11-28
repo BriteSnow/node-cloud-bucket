@@ -1,5 +1,5 @@
 
-import type { Bucket } from './bucket';
+import type { Bucket } from './bucket.js';
 
 /////////////////////
 // Those are the common types to avoid uncessary cyclic module reference. (best practice)

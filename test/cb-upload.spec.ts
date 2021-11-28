@@ -1,7 +1,7 @@
 import { deepStrictEqual as equal } from 'assert';
-import { readFile } from 'fs-extra-plus';
-import { getBucket } from '../src';
-import { cleanAll, generateTests, TEST_DIR, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01 } from './test-utils';
+import { getBucket } from '../src/index.js';
+import { cleanAll, generateTests, TEST_DIR, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01 } from './test-utils.js';
+const { readFile } = (await import('fs-extra')).default;
 
 
 describe('cb-upload', function () {

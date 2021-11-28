@@ -1,6 +1,7 @@
 import { strictEqual } from 'assert';
-import { glob, readFile } from 'fs-extra-plus';
-import { cleanAll, cleanTmpDir, generateTests, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01, TEST_TMP_DIR } from './test-utils';
+import { glob } from 'fs-extra-plus';
+import { cleanAll, cleanTmpDir, generateTests, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01, TEST_TMP_DIR } from './test-utils.js';
+const { readFile } = (await import('fs-extra')).default;
 
 
 const remoteFile01 = 'test-file-01.txt';

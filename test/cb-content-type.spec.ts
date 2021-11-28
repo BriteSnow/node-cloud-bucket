@@ -1,5 +1,5 @@
 import { strictEqual } from 'assert';
-import { cleanAll, generateTests, TEST_DIR } from './test-utils';
+import { cleanAll, generateTests, TEST_DIR } from './test-utils.js';
 
 
 describe('cb-content-type', function () {

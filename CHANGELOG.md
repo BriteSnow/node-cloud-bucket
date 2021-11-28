@@ -2,6 +2,14 @@
 
 > Note: Minor updates with dependency only update are not recorded here (but still tagged)
 
+### [v0.4.0](https://github.com/BriteSnow/node-cloud-bucket/compare/v0.3.6...v0.4.0) Nov 29, 2021
+
+- `!` update to ESM module (type: "module") (do not export cjs anymore)
+
+### [v0.3.6](https://github.com/BriteSnow/node-cloud-bucket/compare/v0.3.5...v0.3.6) Nov 26, 2021
+
+- `.` update dependencies
+
 ### [v0.3.5](https://github.com/BriteSnow/node-cloud-bucket/compare/v0.3.3...v0.3.5) July 19, 2020
 
 - `+` minio - Added support for minio (for dev/mock only for now)

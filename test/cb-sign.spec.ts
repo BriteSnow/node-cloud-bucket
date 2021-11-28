@@ -1,8 +1,8 @@
 import * as Path from 'path';
 import { performance } from 'perf_hooks';
-import { getBucket, signUrl, SignUrlOptions } from '../src';
-import { urlSigner } from '../src/url-signer';
-import { generateTests, loadYaml } from './test-utils';
+import { getBucket, signUrl, SignUrlOptions } from '../src/index.js';
+import { urlSigner } from '../src/url-signer.js';
+import { generateTests, loadYaml } from './test-utils.js';
 
 const IT = 100;
 

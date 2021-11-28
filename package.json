@@ -1,6 +1,7 @@
 {
   "name": "cloud-bucket",
-  "version": "0.3.16",
+  "type": "module",
+  "version": "0.4.0",
   "description": "Simple multi cloud (Google Storage and AWS S3) bucket API",
   "author": "Jeremy Chone <jeremy.chone@gmail.com>",
   "main": "dist/index.js",
@@ -29,7 +30,7 @@
     "typescript": "^4.5.2"
   },
   "scripts": {
-    "test": "TS_NODE_FILES=true ./node_modules/.bin/mocha",
+    "test": "TS_NODE_PROJECT='test/tsconfig.json' ./node_modules/.bin/mocha",
     "testw": "TS_NODE_FILES=true ./node_modules/.bin/mocha --watch",
     "testd": "TS_NODE_FILES=true ./node_modules/.bin/mocha --inspect-brk",
     "prepare": "rm -Rf dist/ && ./node_modules/.bin/tsc"

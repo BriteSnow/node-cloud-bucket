@@ -1,6 +1,7 @@
-import { S3 } from 'aws-sdk';
-import { S3Driver, S3DriverCfg } from './driver-aws';
-import { BucketType } from './types';
+import type { S3 as S3_TYPE } from 'aws-sdk';
+import { S3Driver, S3DriverCfg } from './driver-aws.js';
+import { BucketType } from './types.js';
+const { S3 } = (await import('aws-sdk')).default;
 
 export interface MinioDriverCfg extends S3DriverCfg {
 	minio_endpoint: string;
@@ -33,7 +34,7 @@ class MinioDriver extends S3Driver {
 
 
 
-async function bucketExists(s3: S3, bucketName: string) {
+async function bucketExists(s3: S3_TYPE, bucketName: string) {
 
 	return new Promise((res, rej) => {
 		s3.headBucket({
@@ -45,7 +46,7 @@ async function bucketExists(s3: S3, bucketName: string) {
 
 }
 
-async function createBucket(s3: S3, bucketName: string) {
+async function createBucket(s3: S3_TYPE, bucketName: string) {
 
 	// create the bucket
 	await new Promise((res, rej) => {

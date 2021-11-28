@@ -1,7 +1,7 @@
-import * as fs from 'fs-extra-plus';
-import { mkdirp, saferRemove } from 'fs-extra-plus';
+const { mkdirp, readFile } = (await import('fs-extra')).default;
+import { saferRemove } from 'fs-extra-plus';
 import * as jsyaml from 'js-yaml';
-import { getBucket } from '../src';
+import { getBucket } from '../src/index.js';
 
 export const TEST_DIR = './test-data/dir/';
 export const TEST_TMP_DIR = './test-data/.tmp/';
@@ -18,7 +18,7 @@ export async function yaml(content: string) {
 }
 
 export async function loadYaml(path: string) {
-	const yamlContent = await fs.readFile(path, 'utf8');
+	const yamlContent = await readFile(path, 'utf8');
 	return yaml(yamlContent) as any;
 }
 //#endregion ---------- /Data Loaders ---------- 

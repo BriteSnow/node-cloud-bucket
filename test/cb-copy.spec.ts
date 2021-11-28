@@ -1,5 +1,5 @@
 import { ok, rejects, strictEqual } from 'assert';
-import { cleanAll, generateTests, TEST_FILE_LOCALPATH_01 } from './test-utils';
+import { cleanAll, generateTests, TEST_FILE_LOCALPATH_01 } from './test-utils.js';
 
 const remoteFile01 = 'test-file-01.txt';
 const remoteFile02 = 'test-file-02.txt';

@@ -1,6 +1,7 @@
+//
 import { deepStrictEqual as equal, fail, ok } from 'assert';
-import { getBucket } from '../src/index';
-import { checkIsoDate, cleanAll, generateTests, TEST_DIR, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01 } from './test-utils';
+import { getBucket } from '../src/index.js';
+import { checkIsoDate, cleanAll, generateTests, TEST_DIR, TEST_FILE_LOCALPATH_01, TEST_FILE_NAME_01 } from './test-utils.js';
 
 
 const remoteFile01 = 'test-file-01.txt';

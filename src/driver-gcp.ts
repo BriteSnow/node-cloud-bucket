@@ -2,7 +2,7 @@ import { Bucket as GoogleBucket, File as GoogleFile, GetFilesOptions, Storage as
 import { Readable, Writable } from "stream";
 import { Driver, ListCloudFilesOptions, ListCloudFilesResult } from "./driver";
 import { BucketFile, BucketType } from './types';
-import micromatch = require('micromatch');
+const micromatch = (await import('micromatch')).default;
 
 export async function getGsDriver(cfg: GsDriverCfg) {
 	// TODO: valid cfg
