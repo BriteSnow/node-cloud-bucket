@@ -1,11 +1,12 @@
 import { Bucket as GoogleBucket } from '@google-cloud/storage';
 import { S3 } from 'aws-sdk';
-import { glob, mkdirp } from 'fs-extra-plus';
+import { glob } from 'fs-extra-plus';
 import { lookup } from 'mime-types';
 import * as Path from 'path';
 import { Readable, Writable } from 'stream';
 import { Driver, ListCloudFilesOptions } from './driver.js';
 import { BucketFile, BucketFileDeleted, BucketType, ListArg, ListOptions, ListResult } from './types.js';
+const { mkdirp } = (await import('fs-extra')).default;
 
 export interface BucketOptions {
 	driver: Driver;
