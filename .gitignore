@@ -2,6 +2,7 @@
 .*
 
 !.gitignore
+!.mocharc.yaml
 
 *.tgz
 
