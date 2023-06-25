@@ -13,7 +13,7 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@google-cloud/storage": "^5.18.2",
+    "@google-cloud/storage": "^6.11.0",
     "@types/micromatch": "^4.0.2",
     "@types/mime-types": "^2.1.1",
     "aws-sdk": "^2.1090.0",
