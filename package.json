@@ -1,7 +1,7 @@
 {
   "name": "cloud-bucket",
   "type": "module",
-  "version": "0.5.0",
+  "version": "0.5.1-WIP",
   "description": "Simple multi cloud (Google Storage and AWS S3) bucket API",
   "author": "Jeremy Chone <jeremy.chone@gmail.com>",
   "main": "dist/index.js",
