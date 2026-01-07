@@ -1,5 +1,5 @@
+import { S3Client } from '@aws-sdk/client-s3';
 import { Bucket as GoogleBucket } from '@google-cloud/storage';
-import { S3 } from 'aws-sdk';
 import { glob } from 'fs-extra-plus';
 import { lookup } from 'mime-types';
 import * as Path from 'path';
@@ -21,7 +21,7 @@ export interface Bucket {
 	type: BucketType;
 	name: string;
 
-	readonly s3?: S3;
+	readonly s3?: S3Client;
 	readonly googleBucket?: GoogleBucket;
 
 
@@ -91,9 +91,9 @@ class BucketImpl<F> implements Bucket {
 		return this.driver.name;
 	}
 
-	get s3(): S3 | undefined {
+	get s3(): S3Client | undefined {
 		if (this.driver.type === 's3') {
-			return (<any>this.driver).s3 as S3;
+			return (<any>this.driver).s3 as S3Client;
 		}
 	}
 

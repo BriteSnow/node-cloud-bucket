@@ -133,7 +133,7 @@ function gs_urlSigner(baseUrl: string, opts: CloudSignUrlOptions): (pathFromBase
 		const url = base_url + pathFromBaseUrl;
 		// URL to sign
 		const urlToSign = `${url}?Expires=${opts.expires}&KeyName=${opts.keyName}`;
-		let signature = crypto.createHmac('sha1', su_key_buff).update(urlToSign).digest('base64');
+		let signature = crypto.createHmac('sha1', new Uint8Array(su_key_buff)).update(urlToSign).digest('base64');
 		signature = signature.replace(/[+/=]/g, c => (<any>GCP_BASE64_REPLACE)[c]);
 		// Add signature to urlToSign
 		return `${urlToSign}&Signature=${signature}`;
@@ -147,7 +147,7 @@ function gs_sign_url(url: string, opts: CloudSignUrlOptions) {
 
 	// Compute signature
 	let su_key_buff = Buffer.from(opts.key, 'base64');
-	let signature = crypto.createHmac('sha1', su_key_buff).update(urlToSign).digest('base64');
+	let signature = crypto.createHmac('sha1', new Uint8Array(su_key_buff)).update(urlToSign).digest('base64');
 	signature = signature.replace(/[+/=]/g, c => (<any>GCP_BASE64_REPLACE)[c]);
 
 	// Add signature to urlToSign

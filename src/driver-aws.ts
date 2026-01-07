@@ -1,16 +1,15 @@
-import type { S3 as S3_TYPE } from 'aws-sdk';
-import { ListObjectsV2Request } from 'aws-sdk/clients/s3';
+import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, ListObjectsV2Request, PutObjectCommand, _Object as S3_TYPE, S3Client } from '@aws-sdk/client-s3';
+import { Upload } from "@aws-sdk/lib-storage";
 import { PassThrough, Readable, Writable } from "stream";
 import { Driver, ListCloudFilesOptions, ListCloudFilesResult } from "./driver";
 import { BucketFile, BucketType } from './types';
 const micromatch = (await import('micromatch')).default;
 const { createReadStream, createWriteStream } = (await import('fs-extra')).default;
-const { Credentials, S3 } = (await import('aws-sdk')).default;
 
 // import {Object as AwsFile} from 'aws-sdk';
 
 // type S3 = AWS.S3;
-type AwsFile = S3_TYPE.Object & { ContentType?: string };
+type AwsFile = S3_TYPE & { ContentType?: string };
 
 export interface S3DriverCfg {
 	bucketName: string;
@@ -19,9 +18,16 @@ export interface S3DriverCfg {
 }
 
 export async function getS3Driver(cfg: S3DriverCfg) {
-	const credentials = new Credentials(cfg.access_key_id, cfg.access_key_secret);
 	// Create S3 service object
-	const s3 = new S3({ apiVersion: '2006-03-01', credentials });
+	let region = process.env.AWS_REGION || 'us-east-1';
+	const s3 = new S3Client({ 
+		region,
+		apiVersion: '2006-03-01', 
+		credentials: {
+			accessKeyId: cfg.access_key_id,
+			secretAccessKey: cfg.access_key_secret
+		}
+	});
 	return new S3Driver(s3, cfg.bucketName);
 }
 
@@ -46,7 +52,7 @@ class S3UploadWriteStream extends PassThrough {
 }
 
 export class S3Driver implements Driver<AwsFile> {
-	private s3: S3_TYPE;
+	private s3: S3Client;
 	private baseParams: { Bucket: string };
 
 	get type(): BucketType {
@@ -57,7 +63,7 @@ export class S3Driver implements Driver<AwsFile> {
 		return this.baseParams.Bucket;
 	}
 
-	constructor(s3: S3_TYPE, bucketName: string) {
+	constructor(s3: S3Client, bucketName: string) {
 		this.s3 = s3;
 		this.baseParams = { Bucket: bucketName };
 	}
@@ -87,7 +93,12 @@ export class S3Driver implements Driver<AwsFile> {
 
 	async getCloudFile(path: string): Promise<AwsFile | null> {
 		try {
-			const object = await this.s3.headObject({ ...this.baseParams, ...{ Key: path } }).promise();
+			const command = new HeadObjectCommand({
+				...this.baseParams,
+				...{ Key: path }
+			});
+			
+			const object = await this.s3.send(command);
 			// bucket: this,
 			// 	path,
 			// 	updated,
@@ -134,7 +145,8 @@ export class S3Driver implements Driver<AwsFile> {
 
 		// perform the s3 list request
 		try {
-			const awsResult = await this.s3.listObjectsV2(params).promise();
+			const command = new ListObjectsV2Command(params);
+			const awsResult = await this.s3.send(command);
 			const awsFiles = awsResult.Contents as AwsFile[];
 			// if glob, filter again the result
 			let files: AwsFile[] = (!glob) ? awsFiles : awsFiles.filter(af => micromatch.isMatch(af.Key!, glob));
@@ -166,14 +178,16 @@ export class S3Driver implements Driver<AwsFile> {
 			Bucket: dest.bucket.name,
 			Key: dest.path
 		}
-		await this.s3.copyObject(params).promise();
+		const command = new CopyObjectCommand(params);
+		await this.s3.send(command);
 	}
 
 
 	async downloadCloudFile(rawFile: AwsFile, localPath: string): Promise<void> {
 		const remotePath = rawFile.Key!;
 		const params = { ...this.baseParams, ...{ Key: remotePath } };
-		const remoteReadStream = this.s3.getObject(params).createReadStream();
+		const command = new GetObjectCommand(params);
+		const remoteReadStream = (await this.s3.send(command)).Body as Readable;
 		const localWriteStream = createWriteStream(localPath);
 		const writePromise = new Promise<void>((resolve, reject) => {
 			localWriteStream.once('close', () => {
@@ -190,7 +204,8 @@ export class S3Driver implements Driver<AwsFile> {
 
 	async uploadCloudFile(localPath: string, remoteFilePath: string, contentType?: string): Promise<AwsFile> {
 		const readable = createReadStream(localPath);
-		const awsResult = await this.s3.putObject({ ...this.baseParams, ...{ Key: remoteFilePath, Body: readable, ContentType: contentType } }).promise();
+		const command = new PutObjectCommand({ ...this.baseParams, ...{ Key: remoteFilePath, Body: readable, ContentType: contentType } });
+		const awsResult = await this.s3.send(command);
 		// TODO: probably check the awsResult that match remoteFilePath
 		return { Key: remoteFilePath };
 
@@ -198,34 +213,39 @@ export class S3Driver implements Driver<AwsFile> {
 
 	async downloadAsText(path: string): Promise<string> {
 		const params = { ...this.baseParams, ...{ Key: path } };
-		const obj = await this.s3.getObject(params).promise();
+		const command = new GetObjectCommand(params);
+		const obj = await await this.s3.send(command);
 		const content = obj.Body!.toString();
 		return content;
 	}
 
 	async uploadCloudContent(path: string, content: string, contentType?: string): Promise<void> {
-
-		await this.s3.putObject({ ...this.baseParams, ...{ Key: path, Body: content, ContentType: contentType } }).promise();
+		const command = new PutObjectCommand({ ...this.baseParams, ...{ Key: path, Body: content, ContentType: contentType } });
+		await this.s3.send(command);
 	}
 
 	async createReadStream(path: string): Promise<Readable> {
 		const params = { ...this.baseParams, ...{ Key: path } };
-		const obj = this.s3.getObject(params);
+		const command = new GetObjectCommand(params);
+		const obj = await this.s3.send(command);
 
 		if (!obj) {
 			throw new Error(`Object not found for ${path}`);
 		}
-		return obj.createReadStream();
+		return obj.Body as Readable;
 	}
 
 	async createWriteStream(path: string, contentType?: string): Promise<Writable> {
 		const writable = new S3UploadWriteStream();
 
 		const params = { ...this.baseParams, ...{ Key: path, ContentType: contentType }, Body: writable };
-		const uploadCtrl = this.s3.upload(params);
+		const uploadCtrl = new Upload({
+        client: this.s3,
+        params: params
+    });
 
 		// NOTE: We use the S3UploadWriteStream trigger finish and close stream even when the upload is done
-		uploadCtrl.promise().then(() => {
+		uploadCtrl.done().then(() => {
 			writable.triggerFinishAndClose();
 		});
 
@@ -239,7 +259,8 @@ export class S3Driver implements Driver<AwsFile> {
 		if (exists) {
 			// NOTE: between the first test and this delete, the object might have been deleted, but since s3.deleteObjecct
 			//       does not seems to tell if the object exits or not, this is the best can do.
-			await this.s3.deleteObject({ ...this.baseParams, ...{ Key: path } }).promise();
+			const command = new DeleteObjectCommand({ ...this.baseParams, ...{ Key: path } });
+			await this.s3.send(command);
 			return true;
 		} else {
 			process.stdout.write(` - Skipped (object not found)\n`);
